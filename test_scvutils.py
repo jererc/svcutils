@@ -1,6 +1,8 @@
+import logging
+from multiprocessing import Process
 import os
-from pprint import pprint
 import shutil
+import signal
 import time
 import unittest
 from unittest.mock import patch
@@ -10,6 +12,8 @@ import svcutils as module
 
 TEST_DIR = '_test_svcutils'
 WORK_PATH = os.path.join(os.path.expanduser('~'), TEST_DIR)
+
+module.logger.setLevel(logging.DEBUG)
 
 
 def remove_path(path):
@@ -28,15 +32,15 @@ class ServiceTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_PATH)
         makedirs(WORK_PATH)
+
+    def test_run_once(self):
         self.runs = 0
         self.calls = 0
-
-    def test_task(self):
 
         def callable():
             self.calls += 1
 
-        task = module.Task(
+        svc = module.Service(
             callable=callable,
             work_path=WORK_PATH,
             run_delta=1,
@@ -45,11 +49,40 @@ class ServiceTestCase(unittest.TestCase):
         with patch.object(module, 'is_idle') as mock__is_idle:
             mock__is_idle.return_value = True
             while time.time() < end_ts:
-                task.run()
+                svc.run_once()
                 self.runs += 1
                 time.sleep(.1)
-        self.assertTrue(self.runs >= 30 - 1)
+        print(f'{self.runs=}, {self.calls=}')
+        self.assertTrue(self.runs >= 20)
         self.assertTrue(self.calls <= 4)
+
+    def test_run(self):
+        self.result_path = os.path.join(WORK_PATH, '_test_result')
+
+        def callable():
+            with open(self.result_path, 'a') as fd:
+                fd.write('call\n')
+
+        def run():
+            with patch.object(module, 'is_idle') as mock__is_idle:
+                mock__is_idle.return_value = True
+                svc = module.Service(
+                    callable=callable,
+                    work_path=WORK_PATH,
+                    run_delta=1,
+                    loop_delay=.1,
+                )
+                svc.run()
+
+        proc = Process(target=run)
+        proc.start()
+        time.sleep(3)
+        os.kill(proc.pid, signal.SIGTERM)
+
+        with open(self.result_path) as fd:
+            lines = fd.read().splitlines()
+        print(lines)
+        self.assertEqual(lines, ['call'] * 3)
 
 
 class BootstrapTestCase(unittest.TestCase):

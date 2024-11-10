@@ -132,52 +132,43 @@ def must_run(last_run_ts, run_delta, force_run_delta):
     return False
 
 
-class Daemon:
+class Service:
     def __init__(self, callable, work_path, run_delta, force_run_delta=None,
                  loop_delay=30):
         self.callable = callable
         self.work_path = work_path
         self.run_delta = run_delta
         self.force_run_delta = force_run_delta or run_delta * 2
-        self.run_file = RunFile(os.path.join(work_path, 'daemon.run'))
+        self.run_file = RunFile(os.path.join(work_path, 'service.run'))
         self.loop_delay = loop_delay
+
+    def _run_once(self):
+        if must_run(self.run_file.get_ts(),
+                self.run_delta, self.force_run_delta):
+            self.callable()
+            self.run_file.touch()
+
+    def run_once(self):
+        @with_lockfile(self.work_path)
+        def run():
+            try:
+                self._run_once()
+            except Exception:
+                logger.exception('failed')
+
+        run()
 
     def run(self):
         @with_lockfile(self.work_path)
         def run():
             while True:
                 try:
-                    if must_run(self.run_file.get_ts(),
-                            self.run_delta, self.force_run_delta):
-                        self.callable()
-                        self.run_file.touch()
+                    self._run_once()
                 except Exception:
                     logger.exception('failed')
                 finally:
                     logger.debug(f'sleeping for {self.loop_delay} seconds')
                     time.sleep(self.loop_delay)
-
-        run()
-
-
-class Task:
-    def __init__(self, callable, work_path, run_delta, force_run_delta=None):
-        self.callable = callable
-        self.work_path = work_path
-        self.run_delta = run_delta
-        self.force_run_delta = force_run_delta or run_delta * 2
-        self.run_file = RunFile(os.path.join(work_path, 'task.run'))
-
-    def run(self):
-        @with_lockfile(self.work_path)
-        def run():
-            try:
-                if must_run(self.run_file.get_ts(),
-                        self.run_delta, self.force_run_delta):
-                    self.callable()
-                    self.run_file.touch()
-            except Exception:
-                logger.exception('failed')
 
         run()
 
