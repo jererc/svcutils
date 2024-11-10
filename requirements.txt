@@ -1,0 +1,2 @@
+psutil
+win11toast ; sys_platform == 'win32'
