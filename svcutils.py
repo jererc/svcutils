@@ -194,18 +194,14 @@ class Bootstrapper:
         self.crontab_schedule = crontab_schedule
         self.linux_args = linux_args
         self.windows_args = windows_args
-        self.script_filename = os.path.basename(self.script_path)
-        self.script_name = os.path.splitext(self.script_filename)[0]
+        self.script_name = os.path.splitext(os.path.basename(
+            self.script_path))[0]
         self.root_venv_path = os.path.join(os.path.expanduser('~'),
             self.venv_dir)
         self.venv_path = os.path.join(self.root_venv_path, self.script_name)
         self.pip_path = {
             'nt': os.path.join(self.venv_path, r'Scripts\pip.exe'),
             'posix': os.path.join(self.venv_path, 'bin/pip'),
-        }[os.name]
-        self.py_path = {
-            'nt': os.path.join(self.venv_path, r'Scripts\python.exe'),
-            'posix': os.path.join(self.venv_path, 'bin/python'),
         }[os.name]
         self.svc_py_path = {
             'nt': os.path.join(self.venv_path, r'Scripts\pythonw.exe'),
@@ -214,7 +210,7 @@ class Bootstrapper:
 
     def _setup_venv(self):
         makedirs(self.root_venv_path)
-        if not os.path.exists(self.py_path):
+        if not os.path.exists(self.svc_py_path):
             if os.name == 'nt':   # requires python3-virtualenv on linux
                 subprocess.check_call(['pip', 'install', 'virtualenv'])
             subprocess.check_call(['virtualenv', self.venv_path])

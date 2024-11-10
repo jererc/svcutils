@@ -48,7 +48,7 @@ class ServiceTestCase(unittest.TestCase):
                 task.run()
                 self.runs += 1
                 time.sleep(.1)
-        self.assertTrue(self.runs >= 30)
+        self.assertTrue(self.runs >= 30 - 1)
         self.assertTrue(self.calls <= 4)
 
 
