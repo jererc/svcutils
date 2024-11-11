@@ -29,11 +29,6 @@ def makedirs(x):
         os.makedirs(x)
 
 
-class OnlineTestCase(unittest.TestCase):
-    def test_1(self):
-        print(module.is_online())
-
-
 class MustRunTestCase(unittest.TestCase):
     def setUp(self):
         self.callable = int
