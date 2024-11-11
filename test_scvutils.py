@@ -152,7 +152,8 @@ class OnlineTimeTestCase(unittest.TestCase):
             callable=callable,
             work_path=WORK_PATH,
             run_delta=1,
-            min_online_time=5,
+            min_running_time=5,
+            requires_online=True,
         )
         with patch.object(module, 'is_idle') as mock_is_idle:
             mock_is_idle.return_value = True
