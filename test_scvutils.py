@@ -161,7 +161,8 @@ class OnlineTimeTestCase(unittest.TestCase):
         )
         with patch.object(module, 'is_idle') as mock_is_idle:
             mock_is_idle.return_value = True
-            for i in range(7):
+            end_ts = time.time() + 7
+            while time.time() < end_ts:
                 svc.run_once()
                 time.sleep(1)
         self.assertTrue(self.calls)
