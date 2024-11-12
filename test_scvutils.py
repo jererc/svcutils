@@ -8,6 +8,8 @@ import time
 import unittest
 from unittest.mock import patch
 
+import psutil
+
 import svcutils as module
 
 
@@ -36,9 +38,9 @@ class MustRunTestCase(unittest.TestCase):
 
     def test_run(self):
         with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                patch.object(module, 'is_idle') as mock_is_idle:
+                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
             mock_get_ts.return_value = time.time() - 1
-            mock_is_idle.return_value = True
+            mock_cpu_percent.return_value = 1
             self.assertFalse(module.Service(
                 callable=self.callable,
                 work_path=self.work_path,
@@ -46,36 +48,63 @@ class MustRunTestCase(unittest.TestCase):
             )._must_run())
 
         with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                patch.object(module, 'is_idle') as mock_is_idle:
-            mock_get_ts.return_value = time.time() - 20
-            mock_is_idle.return_value = True
+                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
+            mock_get_ts.return_value = time.time() - 11
+            mock_cpu_percent.return_value = 1
             self.assertTrue(module.Service(
                 callable=self.callable,
                 work_path=self.work_path,
                 run_delta=10,
+            )._must_run())
+
+    def test_cpu_percent(self):
+        with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
+                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
+            mock_get_ts.return_value = time.time() - 11
+            mock_cpu_percent.return_value = 20
+            self.assertFalse(module.Service(
+                callable=self.callable,
+                work_path=self.work_path,
+                run_delta=10,
+                force_run_delta=20,
+                max_cpu_percent=10,
+            )._must_run())
+
+        with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
+                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
+            mock_get_ts.return_value = time.time() - 11
+            mock_cpu_percent.return_value = 1
+            self.assertTrue(module.Service(
+                callable=self.callable,
+                work_path=self.work_path,
+                run_delta=10,
+                force_run_delta=20,
+                max_cpu_percent=10,
             )._must_run())
 
     def test_force_run(self):
         with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                patch.object(module, 'is_idle') as mock_is_idle:
-            mock_get_ts.return_value = time.time() - 15
-            mock_is_idle.return_value = False
+                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
+            mock_get_ts.return_value = time.time() - 11
+            mock_cpu_percent.return_value = 20
             self.assertFalse(module.Service(
                 callable=self.callable,
                 work_path=self.work_path,
                 run_delta=10,
                 force_run_delta=20,
+                max_cpu_percent=10,
             )._must_run())
 
         with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                patch.object(module, 'is_idle') as mock_is_idle:
-            mock_get_ts.return_value = time.time() - 30
-            mock_is_idle.return_value = False
+                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
+            mock_get_ts.return_value = time.time() - 21
+            mock_cpu_percent.return_value = 20
             self.assertTrue(module.Service(
                 callable=self.callable,
                 work_path=self.work_path,
                 run_delta=10,
                 force_run_delta=20,
+                max_cpu_percent=10,
             )._must_run())
 
 
@@ -97,8 +126,8 @@ class ServiceTestCase(unittest.TestCase):
             run_delta=1,
         )
         end_ts = time.time() + 3
-        with patch.object(module, 'is_idle') as mock_is_idle:
-            mock_is_idle.return_value = True
+        with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
+            mock_cpu_percent.return_value = 1
             while time.time() < end_ts:
                 svc.run_once()
                 self.attempts += 1
@@ -116,8 +145,8 @@ class ServiceTestCase(unittest.TestCase):
             raise Exception('failed')
 
         def run():
-            with patch.object(module, 'is_idle') as mock_is_idle:
-                mock_is_idle.return_value = True
+            with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
+                mock_cpu_percent.return_value = 1
                 svc = module.Service(
                     callable=callable,
                     work_path=WORK_PATH,
@@ -144,8 +173,8 @@ class ServiceTestCase(unittest.TestCase):
                 fd.write('call\n')
 
         def run():
-            with patch.object(module, 'is_idle') as mock_is_idle:
-                mock_is_idle.return_value = True
+            with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
+                mock_cpu_percent.return_value = 1
                 svc = module.Service(
                     callable=callable,
                     work_path=WORK_PATH,
@@ -183,9 +212,9 @@ class RunningTimeTestCase(unittest.TestCase):
             min_running_time=5,
             requires_online=True,
         )
-        with patch.object(module, 'is_idle') as mock_is_idle, \
+        with patch.object(psutil, 'cpu_percent') as mock_cpu_percent, \
                 patch.object(module, 'is_online') as mock_is_online:
-            mock_is_idle.return_value = True
+            mock_cpu_percent.return_value = 1
             mock_is_online.return_value = False
             end_ts = time.time() + 7
             while time.time() < end_ts:
@@ -206,8 +235,8 @@ class RunningTimeTestCase(unittest.TestCase):
             min_running_time=5,
             requires_online=True,
         )
-        with patch.object(module, 'is_idle') as mock_is_idle:
-            mock_is_idle.return_value = True
+        with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
+            mock_cpu_percent.return_value = 1
             end_ts = time.time() + 7
             while time.time() < end_ts:
                 svc.run_once()
