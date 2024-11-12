@@ -85,11 +85,11 @@ class ServiceTestCase(unittest.TestCase):
         makedirs(WORK_PATH)
 
     def test_run_once(self):
+        self.attempts = 0
         self.runs = 0
-        self.calls = 0
 
         def callable():
-            self.calls += 1
+            self.runs += 1
 
         svc = module.Service(
             callable=callable,
@@ -101,11 +101,40 @@ class ServiceTestCase(unittest.TestCase):
             mock_is_idle.return_value = True
             while time.time() < end_ts:
                 svc.run_once()
-                self.runs += 1
-                time.sleep(.1)
-        print(f'{self.runs=}, {self.calls=}')
-        self.assertTrue(self.runs >= 20)
-        self.assertTrue(self.calls <= 4)
+                self.attempts += 1
+                time.sleep(.2)
+        print(f'{self.attempts=}, {self.runs=}')
+        self.assertTrue(self.attempts >= 10)
+        self.assertTrue(self.runs <= 4)
+
+    def test_run_exc(self):
+        self.result_path = os.path.join(WORK_PATH, '_test_result')
+
+        def callable():
+            with open(self.result_path, 'a') as fd:
+                fd.write('call\n')
+            raise Exception('failed')
+
+        def run():
+            with patch.object(module, 'is_idle') as mock_is_idle:
+                mock_is_idle.return_value = True
+                svc = module.Service(
+                    callable=callable,
+                    work_path=WORK_PATH,
+                    run_delta=1,
+                    loop_delay=.2,
+                )
+                svc.run()
+
+        proc = Process(target=run)
+        proc.start()
+        time.sleep(3)
+        os.kill(proc.pid, signal.SIGTERM)
+
+        with open(self.result_path) as fd:
+            lines = fd.read().splitlines()
+        print(lines)
+        self.assertEqual(lines, ['call'] * 3)
 
     def test_run(self):
         self.result_path = os.path.join(WORK_PATH, '_test_result')
@@ -121,7 +150,7 @@ class ServiceTestCase(unittest.TestCase):
                     callable=callable,
                     work_path=WORK_PATH,
                     run_delta=1,
-                    loop_delay=.1,
+                    loop_delay=.2,
                 )
                 svc.run()
 
@@ -141,39 +170,34 @@ class RunningTimeTestCase(unittest.TestCase):
         remove_path(WORK_PATH)
         makedirs(WORK_PATH)
 
-    def test_1(self):
+    def test_offline(self):
         self.runs = 0
-        self.calls = 0
 
         def callable():
-            self.calls += 1
+            self.runs += 1
 
         svc = module.Service(
             callable=callable,
             work_path=WORK_PATH,
             run_delta=1,
-            min_running_time=2,
+            min_running_time=5,
+            requires_online=True,
         )
-        with patch.object(module, 'is_idle') as mock_is_idle:
+        with patch.object(module, 'is_idle') as mock_is_idle, \
+                patch.object(module, 'is_online') as mock_is_online:
             mock_is_idle.return_value = True
-            end_ts = time.time() + 10
+            mock_is_online.return_value = False
+            end_ts = time.time() + 7
             while time.time() < end_ts:
                 svc.run_once()
-                time.sleep(5)
-        self.assertTrue(self.calls)
+                time.sleep(1)
+        self.assertFalse(self.runs)
 
-
-class OnlineTimeTestCase(unittest.TestCase):
-    def setUp(self):
-        remove_path(WORK_PATH)
-        makedirs(WORK_PATH)
-
-    def test_1(self):
+    def test_online(self):
         self.runs = 0
-        self.calls = 0
 
         def callable():
-            self.calls += 1
+            self.runs += 1
 
         svc = module.Service(
             callable=callable,
@@ -188,7 +212,7 @@ class OnlineTimeTestCase(unittest.TestCase):
             while time.time() < end_ts:
                 svc.run_once()
                 time.sleep(1)
-        self.assertTrue(self.calls)
+        self.assertTrue(self.runs)
 
 
 class BootstrapTestCase(unittest.TestCase):
