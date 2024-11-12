@@ -136,6 +136,33 @@ class ServiceTestCase(unittest.TestCase):
         self.assertEqual(lines, ['call'] * 3)
 
 
+class RunningTimeTestCase(unittest.TestCase):
+    def setUp(self):
+        remove_path(WORK_PATH)
+        makedirs(WORK_PATH)
+
+    def test_1(self):
+        self.runs = 0
+        self.calls = 0
+
+        def callable():
+            self.calls += 1
+
+        svc = module.Service(
+            callable=callable,
+            work_path=WORK_PATH,
+            run_delta=1,
+            min_running_time=2,
+        )
+        with patch.object(module, 'is_idle') as mock_is_idle:
+            mock_is_idle.return_value = True
+            end_ts = time.time() + 10
+            while time.time() < end_ts:
+                svc.run_once()
+                time.sleep(5)
+        self.assertTrue(self.calls)
+
+
 class OnlineTimeTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_PATH)
