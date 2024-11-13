@@ -1,7 +1,6 @@
 import logging
 from multiprocessing import Process
 import os
-from pprint import pprint
 import shutil
 import signal
 import time
@@ -29,6 +28,84 @@ def remove_path(path):
 def makedirs(x):
     if not os.path.exists(x):
         os.makedirs(x)
+
+
+class ServiceTrackerTestCase(unittest.TestCase):
+    def setUp(self):
+        self.callable = int
+        self.work_path = WORK_PATH
+
+    def test_update(self):
+        st = module.ServiceTracker(self.work_path, min_running_time=3,
+            requires_online=True)
+        for i in range(st.min_running_time * 3):
+            st.update()
+            time.sleep(1)
+        print(st.data)
+        self.assertTrue(st.data[0][0] >= int(time.time())
+            - st.min_running_time - st.check_precision - 1)
+
+    def test_check(self):
+        st = module.ServiceTracker(self.work_path, min_running_time=60,
+            requires_online=True, check_precision=10)
+
+        now_ts = int(time.time())
+        t = now_ts - st.min_running_time - st.check_precision
+        st.data = [
+            [t + 5, 1],
+            [t + 15, 1],
+            [t + 25, 1],
+            [t + 35, 0],
+            [t + 45, 1],
+            [t + 55, 1],
+            [t + 65, 0],
+            [now_ts, 1],
+        ]
+        self.assertFalse(st.check())
+
+        now_ts = int(time.time())
+        t = now_ts - st.min_running_time - st.check_precision
+        st.data = [
+            [t + 15, 1],
+            [t + 25, 1],
+            [t + 35, 1],
+            [t + 45, 1],
+            [t + 55, 1],
+            [t + 65, 1],
+            [now_ts, 1],
+        ]
+        self.assertFalse(st.check())
+
+        now_ts = int(time.time())
+        t = now_ts - st.min_running_time - st.check_precision
+        st.data = [
+            [t + 5, 1],
+            [t + 15, 1],
+            [t + 25, 1],
+            [t + 35, 1],
+            [t + 45, 1],
+            [t + 55, 1],
+        ]
+        self.assertFalse(st.check())
+
+        now_ts = int(time.time())
+        t = now_ts - st.min_running_time - st.check_precision
+        st.data = [[t + i, 1] for i in range(1, 65)] + [[now_ts, 1]]
+        self.assertTrue(st.check())
+
+        now_ts = int(time.time())
+        t = now_ts - st.min_running_time - st.check_precision
+        st.data = [
+            [t + 5, 1],
+            [t + 15, 1],
+            [t + 25, 1],
+            [t + 35, 1],
+            [t + 45, 1],
+            [t + 55, 1],
+            [t + 65, 1],
+            [now_ts, 1],
+        ]
+        self.assertTrue(st.check())
 
 
 class MustRunTestCase(unittest.TestCase):
