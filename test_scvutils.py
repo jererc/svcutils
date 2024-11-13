@@ -36,21 +36,21 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.work_path = WORK_PATH
 
     def test_update(self):
-        st = module.ServiceTracker(self.work_path, min_running_time=3,
+        st = module.ServiceTracker(self.work_path, min_runtime=3,
             requires_online=True)
-        for i in range(st.min_running_time * 3):
+        for i in range(st.min_runtime * 3):
             st.update()
             time.sleep(1)
         print(st.data)
         self.assertTrue(st.data[0][0] >= int(time.time())
-            - st.min_running_time - st.check_precision - 1)
+            - st.min_runtime - st.runtime_precision - 1)
 
     def test_check(self):
-        st = module.ServiceTracker(self.work_path, min_running_time=60,
-            requires_online=True, check_precision=10)
+        st = module.ServiceTracker(self.work_path, min_runtime=60,
+            requires_online=True, runtime_precision=10)
 
         now_ts = int(time.time())
-        t = now_ts - st.min_running_time - st.check_precision
+        t = now_ts - st.min_runtime - st.runtime_precision
         st.data = [
             [t + 5, 1],
             [t + 15, 1],
@@ -64,7 +64,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertFalse(st.check())
 
         now_ts = int(time.time())
-        t = now_ts - st.min_running_time - st.check_precision
+        t = now_ts - st.min_runtime - st.runtime_precision
         st.data = [
             [t + 15, 1],
             [t + 25, 1],
@@ -77,7 +77,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertFalse(st.check())
 
         now_ts = int(time.time())
-        t = now_ts - st.min_running_time - st.check_precision
+        t = now_ts - st.min_runtime - st.runtime_precision
         st.data = [
             [t + 5, 1],
             [t + 15, 1],
@@ -89,12 +89,12 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertFalse(st.check())
 
         now_ts = int(time.time())
-        t = now_ts - st.min_running_time - st.check_precision
+        t = now_ts - st.min_runtime - st.runtime_precision
         st.data = [[t + i, 1] for i in range(1, 65)] + [[now_ts, 1]]
         self.assertTrue(st.check())
 
         now_ts = int(time.time())
-        t = now_ts - st.min_running_time - st.check_precision
+        t = now_ts - st.min_runtime - st.runtime_precision
         st.data = [
             [t + 5, 1],
             [t + 15, 1],
@@ -286,7 +286,7 @@ class RunningTimeTestCase(unittest.TestCase):
             callable=callable,
             work_path=WORK_PATH,
             run_delta=1,
-            min_running_time=5,
+            min_runtime=5,
             requires_online=True,
         )
         with patch.object(psutil, 'cpu_percent') as mock_cpu_percent, \
@@ -309,7 +309,7 @@ class RunningTimeTestCase(unittest.TestCase):
             callable=callable,
             work_path=WORK_PATH,
             run_delta=1,
-            min_running_time=5,
+            min_runtime=5,
             requires_online=True,
         )
         with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
