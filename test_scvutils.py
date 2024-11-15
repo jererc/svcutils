@@ -57,69 +57,80 @@ class ServiceTrackerTestCase(unittest.TestCase):
         st = module.ServiceTracker(self.work_path, min_runtime=1)
         end_ts = time.time() + st.check_delta * 2
         while time.time() < end_ts:
-            st.update()
             time.sleep(.1)
+            st.update()
         self.assertTrue(st.data[0][0] > time.time() - st.check_delta)
 
     def test_check(self):
-        st = module.ServiceTracker(self.work_path, min_runtime=60,
-            requires_online=True, runtime_precision=10)
+        st = module.ServiceTracker(self.work_path, min_runtime=40,
+            requires_online=False, runtime_precision=10)
 
-        now_ts = int(time.time())
-        t = now_ts - st.min_runtime - st.runtime_precision
+        now = time.time()
+        t = now - st.min_runtime - st.runtime_precision
         st.data = [
-            [t + 5, 1],
-            [t + 15, 1],
-            [t + 25, 1],
-            [t + 35, 0],
-            [t + 45, 1],
-            [t + 55, 1],
-            [t + 65, 0],
-            [now_ts, 1],
+            [now - 39, 1],
+            [now - 29, 1],
+            [now - 19, 1],
+            [now - 10, 1],
+            [now, 1],
         ]
         self.assertFalse(st.check())
 
-        now_ts = int(time.time())
-        t = now_ts - st.min_runtime - st.runtime_precision
+        now = time.time()
+        t = now - st.min_runtime - st.runtime_precision
         st.data = [
-            [t + 15, 1],
-            [t + 25, 1],
-            [t + 35, 1],
-            [t + 45, 1],
-            [t + 55, 1],
-            [t + 65, 1],
-            [now_ts, 1],
+            [now - 40, 1],
+            [now - 30, 1],
+            [now - 20, 1],
+            [now - 10, 1],
+            [now, 1],
         ]
         self.assertFalse(st.check())
 
-        now_ts = int(time.time())
-        t = now_ts - st.min_runtime - st.runtime_precision
+        now = time.time()
+        t = now - st.min_runtime - st.runtime_precision
         st.data = [
-            [t + 5, 1],
-            [t + 15, 1],
-            [t + 25, 1],
-            [t + 35, 1],
-            [t + 45, 1],
-            [t + 55, 1],
+            [now - 41, 1],
+            [now - 31, 1],
+            [now - 11, 1],
+            [now - 1, 1],
         ]
         self.assertFalse(st.check())
 
-        now_ts = int(time.time())
-        t = now_ts - st.min_runtime - st.runtime_precision
-        st.data = [[t + i, 1] for i in range(1, 65)] + [[now_ts, 1]]
+        now = time.time()
+        t = now - st.min_runtime - st.runtime_precision
+        st.data = [
+            [now - 41, 1],
+            [now - 31, 1],
+            [now - 21, 1],
+            [now - 11, 1],
+            [now - 1, 1],
+        ]
         self.assertTrue(st.check())
 
-        now_ts = int(time.time())
-        t = now_ts - st.min_runtime - st.runtime_precision
+    def test_check_online(self):
+        st = module.ServiceTracker(self.work_path, min_runtime=40,
+            requires_online=True, runtime_precision=10)
+
+        now = time.time()
+        t = now - st.min_runtime - st.runtime_precision
         st.data = [
-            [t + 5, 1],
-            [t + 15, 1],
-            [t + 25, 1],
-            [t + 35, 1],
-            [t + 45, 1],
-            [t + 55, 1],
-            [t + 65, 1],
-            [now_ts, 1],
+            [now - 41, 1],
+            [now - 31, 1],
+            [now - 21, 0],
+            [now - 11, 1],
+            [now - 1, 1],
+        ]
+        self.assertFalse(st.check())
+
+        now = time.time()
+        t = now - st.min_runtime - st.runtime_precision
+        st.data = [
+            [now - 41, 1],
+            [now - 31, 1],
+            [now - 21, 1],
+            [now - 11, 1],
+            [now - 1, 1],
         ]
         self.assertTrue(st.check())
 
