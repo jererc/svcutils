@@ -9,7 +9,8 @@ from unittest.mock import patch
 
 import psutil
 
-import svcutils as module
+from svcutils import svcutils as module
+print(module.__file__)
 
 
 TEST_DIR = '_test_svcutils'
