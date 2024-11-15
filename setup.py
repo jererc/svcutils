@@ -13,6 +13,9 @@ setup(
     ],
     extras_require={
         'dev': ['pytest', 'flake8'],
+        ':sys_platform == "win32"': [
+            'win11toast',
+        ],
     },
     include_package_data=True,
 )
