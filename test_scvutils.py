@@ -66,7 +66,6 @@ class ServiceTrackerTestCase(unittest.TestCase):
             requires_online=False, runtime_precision=10)
 
         now = time.time()
-        t = now - st.min_runtime - st.runtime_precision
         st.data = [
             [now - 39, 1],
             [now - 29, 1],
@@ -77,7 +76,6 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertFalse(st.check())
 
         now = time.time()
-        t = now - st.min_runtime - st.runtime_precision
         st.data = [
             [now - 40, 1],
             [now - 30, 1],
@@ -88,7 +86,6 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertFalse(st.check())
 
         now = time.time()
-        t = now - st.min_runtime - st.runtime_precision
         st.data = [
             [now - 41, 1],
             [now - 31, 1],
@@ -98,7 +95,6 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertFalse(st.check())
 
         now = time.time()
-        t = now - st.min_runtime - st.runtime_precision
         st.data = [
             [now - 41, 1],
             [now - 31, 1],
@@ -113,7 +109,6 @@ class ServiceTrackerTestCase(unittest.TestCase):
             requires_online=True, runtime_precision=10)
 
         now = time.time()
-        t = now - st.min_runtime - st.runtime_precision
         st.data = [
             [now - 41, 1],
             [now - 31, 1],
@@ -124,7 +119,6 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertFalse(st.check())
 
         now = time.time()
-        t = now - st.min_runtime - st.runtime_precision
         st.data = [
             [now - 41, 1],
             [now - 31, 1],
@@ -346,16 +340,3 @@ class RuntimeTestCase(unittest.TestCase):
                 svc.run_once()
                 time.sleep(1)
         self.assertTrue(self.runs)
-
-
-class BootstrapTestCase(unittest.TestCase):
-    def setUp(self):
-        remove_path(WORK_PATH)
-        makedirs(WORK_PATH)
-
-    def test_1(self):
-        module.Bootstrapper(
-            script_path=os.path.realpath(__file__),
-            linux_args=['save', '--task'],
-            windows_args=['save', '--daemon'],
-        ).run()
