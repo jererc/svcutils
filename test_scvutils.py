@@ -37,23 +37,29 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
     def test_params(self):
         st = module.ServiceTracker(self.work_path, min_runtime=1)
-        self.assertEqual(st.runtime_precision, 1)
+        self.assertEqual(st.runtime_precision, 0)
+        self.assertEqual(st.check_delta, 1)
+
         st = module.ServiceTracker(self.work_path, min_runtime=0)
-        self.assertEqual(st.runtime_precision, 1)
+        self.assertEqual(st.runtime_precision, 0)
+        self.assertEqual(st.check_delta, 0)
+
         st = module.ServiceTracker(self.work_path, min_runtime=30)
         self.assertEqual(st.runtime_precision, 15)
-        st = module.ServiceTracker(self.work_path, min_runtime=30,
-            runtime_precision=30)
-        self.assertEqual(st.runtime_precision, 30)
+        self.assertEqual(st.check_delta, 45)
+
+        st = module.ServiceTracker(self.work_path, min_runtime=60,
+            runtime_precision=10)
+        self.assertEqual(st.runtime_precision, 10)
+        self.assertEqual(st.check_delta, 70)
 
     def test_update(self):
-        st = module.ServiceTracker(self.work_path, min_runtime=1,
-            history_count=10)
-        end_ts = time.time() + 3
+        st = module.ServiceTracker(self.work_path, min_runtime=1)
+        end_ts = time.time() + st.check_delta * 2
         while time.time() < end_ts:
             st.update()
             time.sleep(.1)
-        self.assertTrue(len(st.data) == st.history_count)
+        self.assertTrue(st.data[0][0] > time.time() - st.check_delta)
 
     def test_check(self):
         st = module.ServiceTracker(self.work_path, min_runtime=60,
