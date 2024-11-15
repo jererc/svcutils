@@ -168,10 +168,10 @@ class ServiceTracker:
 
 
 class Service:
-    def __init__(self, callable, work_path, run_delta, force_run_delta=None,
+    def __init__(self, target, work_path, run_delta, force_run_delta=None,
                  min_runtime=None, requires_online=False,
                  max_cpu_percent=None, loop_delay=SERVICE_LOOP_DELAY):
-        self.callable = callable
+        self.target = target
         self.work_path = work_path
         self.run_delta = run_delta
         self.force_run_delta = force_run_delta or run_delta * 2
@@ -193,7 +193,6 @@ class Service:
         return True
 
     def _must_run(self):
-        self.tracker.update()
         run_ts = self.run_file.get_ts()
         now_ts = time.time()
         if self.force_run_delta and now_ts > run_ts + self.force_run_delta:
@@ -202,11 +201,12 @@ class Service:
             return self.tracker.check() and self._check_cpu_usage()
         return False
 
-    def _run_once(self):
+    def _attempt_run(self):
         try:
+            self.tracker.update()
             if self._must_run():
                 try:
-                    self.callable()
+                    self.target()
                 finally:
                     self.run_file.touch()
         except Exception:
@@ -215,7 +215,7 @@ class Service:
     def run_once(self):
         @with_lockfile(self.work_path)
         def run():
-            self._run_once()
+            self._attempt_run()
 
         run()
 
@@ -223,7 +223,7 @@ class Service:
         @with_lockfile(self.work_path)
         def run():
             while True:
-                self._run_once()
+                self._attempt_run()
                 logger.debug(f'sleeping for {self.loop_delay} seconds')
                 time.sleep(self.loop_delay)
 

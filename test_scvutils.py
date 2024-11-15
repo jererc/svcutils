@@ -32,7 +32,7 @@ def makedirs(x):
 
 class ServiceTrackerTestCase(unittest.TestCase):
     def setUp(self):
-        self.callable = int
+        self.target = int
         self.work_path = WORK_PATH
 
     def test_params(self):
@@ -126,7 +126,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
 class MustRunTestCase(unittest.TestCase):
     def setUp(self):
-        self.callable = int
+        self.target = int
         self.work_path = WORK_PATH
 
     def test_run(self):
@@ -135,7 +135,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_get_ts.return_value = time.time() - 1
             mock_cpu_percent.return_value = 1
             self.assertFalse(module.Service(
-                callable=self.callable,
+                target=self.target,
                 work_path=self.work_path,
                 run_delta=10,
             )._must_run())
@@ -145,7 +145,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_get_ts.return_value = time.time() - 11
             mock_cpu_percent.return_value = 1
             self.assertTrue(module.Service(
-                callable=self.callable,
+                target=self.target,
                 work_path=self.work_path,
                 run_delta=10,
             )._must_run())
@@ -156,7 +156,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_get_ts.return_value = time.time() - 11
             mock_cpu_percent.return_value = 20
             self.assertFalse(module.Service(
-                callable=self.callable,
+                target=self.target,
                 work_path=self.work_path,
                 run_delta=10,
                 force_run_delta=20,
@@ -168,7 +168,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_get_ts.return_value = time.time() - 11
             mock_cpu_percent.return_value = 1
             self.assertTrue(module.Service(
-                callable=self.callable,
+                target=self.target,
                 work_path=self.work_path,
                 run_delta=10,
                 force_run_delta=20,
@@ -181,7 +181,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_get_ts.return_value = time.time() - 11
             mock_cpu_percent.return_value = 20
             self.assertFalse(module.Service(
-                callable=self.callable,
+                target=self.target,
                 work_path=self.work_path,
                 run_delta=10,
                 force_run_delta=20,
@@ -193,7 +193,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_get_ts.return_value = time.time() - 21
             mock_cpu_percent.return_value = 20
             self.assertTrue(module.Service(
-                callable=self.callable,
+                target=self.target,
                 work_path=self.work_path,
                 run_delta=10,
                 force_run_delta=20,
@@ -210,11 +210,11 @@ class ServiceTestCase(unittest.TestCase):
         self.attempts = 0
         self.runs = 0
 
-        def callable():
+        def target():
             self.runs += 1
 
         svc = module.Service(
-            callable=callable,
+            target=target,
             work_path=WORK_PATH,
             run_delta=1,
         )
@@ -232,7 +232,7 @@ class ServiceTestCase(unittest.TestCase):
     def test_run_exc(self):
         self.result_path = os.path.join(WORK_PATH, '_test_result')
 
-        def callable():
+        def target():
             with open(self.result_path, 'a') as fd:
                 fd.write('call\n')
             raise Exception('failed')
@@ -241,7 +241,7 @@ class ServiceTestCase(unittest.TestCase):
             with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
                 mock_cpu_percent.return_value = 1
                 svc = module.Service(
-                    callable=callable,
+                    target=target,
                     work_path=WORK_PATH,
                     run_delta=1,
                     loop_delay=.2,
@@ -261,7 +261,7 @@ class ServiceTestCase(unittest.TestCase):
     def test_run(self):
         self.result_path = os.path.join(WORK_PATH, '_test_result')
 
-        def callable():
+        def target():
             with open(self.result_path, 'a') as fd:
                 fd.write('call\n')
 
@@ -269,7 +269,7 @@ class ServiceTestCase(unittest.TestCase):
             with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
                 mock_cpu_percent.return_value = 1
                 svc = module.Service(
-                    callable=callable,
+                    target=target,
                     work_path=WORK_PATH,
                     run_delta=1,
                     loop_delay=.2,
@@ -295,11 +295,11 @@ class RuntimeTestCase(unittest.TestCase):
     def test_offline(self):
         self.runs = 0
 
-        def callable():
+        def target():
             self.runs += 1
 
         svc = module.Service(
-            callable=callable,
+            target=target,
             work_path=WORK_PATH,
             run_delta=1,
             min_runtime=5,
@@ -318,11 +318,11 @@ class RuntimeTestCase(unittest.TestCase):
     def test_online(self):
         self.runs = 0
 
-        def callable():
+        def target():
             self.runs += 1
 
         svc = module.Service(
-            callable=callable,
+            target=target,
             work_path=WORK_PATH,
             run_delta=1,
             min_runtime=5,
