@@ -35,15 +35,25 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.callable = int
         self.work_path = WORK_PATH
 
+    def test_params(self):
+        st = module.ServiceTracker(self.work_path, min_runtime=1)
+        self.assertEqual(st.runtime_precision, 1)
+        st = module.ServiceTracker(self.work_path, min_runtime=0)
+        self.assertEqual(st.runtime_precision, 1)
+        st = module.ServiceTracker(self.work_path, min_runtime=30)
+        self.assertEqual(st.runtime_precision, 15)
+        st = module.ServiceTracker(self.work_path, min_runtime=30,
+            runtime_precision=30)
+        self.assertEqual(st.runtime_precision, 30)
+
     def test_update(self):
-        st = module.ServiceTracker(self.work_path, min_runtime=3,
-            requires_online=True)
-        for i in range(st.min_runtime * 3):
+        st = module.ServiceTracker(self.work_path, min_runtime=1,
+            history_count=10)
+        end_ts = time.time() + 3
+        while time.time() < end_ts:
             st.update()
-            time.sleep(1)
-        print(st.data)
-        self.assertTrue(st.data[0][0] >= int(time.time())
-            - st.min_runtime - st.runtime_precision - 1)
+            time.sleep(.1)
+        self.assertTrue(len(st.data) == st.history_count)
 
     def test_check(self):
         st = module.ServiceTracker(self.work_path, min_runtime=60,
@@ -271,7 +281,7 @@ class ServiceTestCase(unittest.TestCase):
         self.assertEqual(lines, ['call'] * 3)
 
 
-class RunningTimeTestCase(unittest.TestCase):
+class RuntimeTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_PATH)
         makedirs(WORK_PATH)
