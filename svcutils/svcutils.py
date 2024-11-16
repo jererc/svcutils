@@ -1,3 +1,6 @@
+#
+# DEPRECATED
+#
 import atexit
 import ctypes
 import functools
