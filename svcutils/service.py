@@ -13,8 +13,6 @@ import time
 
 
 RUN_DELTA = 60
-VENV_DIR = 'venv'
-TASK_SCHEDULE_MINS = 2
 
 logger = logging.getLogger(__name__)
 
