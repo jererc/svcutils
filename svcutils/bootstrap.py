@@ -4,7 +4,7 @@ import subprocess
 
 
 class Bootstrapper:
-    def __init__(self, name, script_path, requires=None, force_reinstall=True,
+    def __init__(self, name, script_path, requires=None, force_reinstall=False,
                  venv_dir='venv', task_schedule_mins=2,
                  linux_args=None, windows_args=None):
         self.name = name
