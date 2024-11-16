@@ -40,13 +40,14 @@ class ConfigTestCase(unittest.TestCase):
         with open(config_file, 'w') as fd:
             fd.write("""CONST1 = 'value1'""")
 
-        config = module.load_config(config_file)
+        config = module.Config(config_file)
         self.assertEqual(config.CONST1, 'value1')
-        self.assertFalse(hasattr(config, 'CONST2'))
+        self.assertEqual(config.CONST2, None)
 
-        config = module.load_config(config_file, CONST2='default2')
+        config = module.Config(config_file, CONST2='default2')
         self.assertEqual(config.CONST1, 'value1')
         self.assertEqual(config.CONST2, 'default2')
+        self.assertEqual(config.CONST3, None)
 
 
 class ServiceTrackerTestCase(unittest.TestCase):

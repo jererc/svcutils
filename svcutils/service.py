@@ -46,16 +46,6 @@ def get_logger(path, name):
     return logger
 
 
-def load_config(path, **defaults):
-    spec = importlib.util.spec_from_file_location('config', path)
-    config = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(config)
-    for k, v in defaults.items():
-        if not hasattr(config, k):
-            setattr(config, k, v)
-    return config
-
-
 def is_online(host='8.8.8.8', port=53, timeout=3):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -106,6 +96,21 @@ def with_lockfile(path):
 
         return wrapper
     return decorator
+
+
+class Config:
+    def __init__(self, file, **defaults):
+        self.config = self._load(file)
+        self.defaults = defaults
+
+    def _load(self, file):
+        spec = importlib.util.spec_from_file_location('config', file)
+        config = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(config)
+        return config
+
+    def __getattr__(self, name, default=None):
+        return getattr(self.config, name, self.defaults.get(name, default))
 
 
 class RunFile:
