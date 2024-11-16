@@ -1,6 +1,7 @@
 import atexit
 import ctypes
 import functools
+import importlib.util
 import json
 import logging
 from logging.handlers import RotatingFileHandler
@@ -46,6 +47,13 @@ def setup_logging(logger, path, name, max_size=1024000):
 def get_logger(path, name):
     setup_logging(logger, path=path, name=name)
     return logger
+
+
+def load_config(path):
+    spec = importlib.util.spec_from_file_location('config', path)
+    config = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(config)
+    return config
 
 
 def is_online(host='8.8.8.8', port=53, timeout=3):
