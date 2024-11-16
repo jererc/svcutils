@@ -10,7 +10,6 @@ from unittest.mock import patch
 import psutil
 
 from svcutils import svcutils as module
-print(module.__file__)
 
 
 TEST_DIR = '_test_svcutils'
@@ -273,7 +272,7 @@ class ServiceTestCase(unittest.TestCase):
                     target=target,
                     work_path=WORK_PATH,
                     run_delta=1,
-                    loop_delay=.2,
+                    daemon_run_delta=.2,
                 )
                 svc.run()
 
@@ -301,7 +300,7 @@ class ServiceTestCase(unittest.TestCase):
                     target=target,
                     work_path=WORK_PATH,
                     run_delta=1,
-                    loop_delay=.2,
+                    daemon_run_delta=.2,
                 )
                 svc.run()
 

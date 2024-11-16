@@ -12,8 +12,8 @@ import sys
 import time
 
 
+RUN_DELTA = 60
 VENV_DIR = 'venv'
-SERVICE_LOOP_DELAY = 60
 TASK_SCHEDULE_MINS = 2
 
 logger = logging.getLogger(__name__)
@@ -168,19 +168,20 @@ class ServiceTracker:
 
 
 class Service:
-    def __init__(self, target, args, kwargs, work_path, run_delta,
-                 force_run_delta=None, min_runtime=None, requires_online=False,
-                 max_cpu_percent=None, loop_delay=SERVICE_LOOP_DELAY):
+    def __init__(self, target, work_path, args=None, kwargs=None,
+                 run_delta=RUN_DELTA, force_run_delta=None,
+                 min_runtime=None, requires_online=False,
+                 max_cpu_percent=None, daemon_run_delta=RUN_DELTA):
         self.target = target
-        self.args = args
-        self.kwargs = kwargs
+        self.args = args or ()
+        self.kwargs = kwargs or {}
         self.work_path = work_path
         self.run_delta = run_delta
         self.force_run_delta = force_run_delta or run_delta * 2
         self.tracker = ServiceTracker(work_path, min_runtime,
             requires_online)
         self.max_cpu_percent = max_cpu_percent
-        self.loop_delay = loop_delay
+        self.daemon_run_delta = daemon_run_delta
         self.run_file = RunFile(os.path.join(work_path, 'service.run'))
 
     def _check_cpu_usage(self):
@@ -226,8 +227,8 @@ class Service:
         def run():
             while True:
                 self._attempt_run()
-                logger.debug(f'sleeping for {self.loop_delay} seconds')
-                time.sleep(self.loop_delay)
+                logger.debug(f'sleeping for {self.daemon_run_delta} seconds')
+                time.sleep(self.daemon_run_delta)
 
         run()
 
