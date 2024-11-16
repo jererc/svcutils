@@ -12,7 +12,7 @@ setup(
         'psutil',
     ],
     extras_require={
-        'dev': ['pytest', 'flake8'],
+        'dev': ['flake8', 'pytest'],
         ':sys_platform == "win32"': [
             'win11toast',
         ],
