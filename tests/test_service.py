@@ -36,14 +36,18 @@ class ConfigTestCase(unittest.TestCase):
         self.work_path = WORK_PATH
 
     def test_1(self):
+        self.assertRaises(Exception, module.Config, 'invalid')
+
         config_file = os.path.join(WORK_PATH, 'config.py')
         with open(config_file, 'w') as fd:
-            fd.write("""CONST1 = 'value1'""")
+            fd.write("""invalid""")
+        self.assertRaises(Exception, module.Config, config_file)
 
+        with open(config_file, 'w') as fd:
+            fd.write("""CONST1 = 'value1'""")
         config = module.Config(config_file)
         self.assertEqual(config.CONST1, 'value1')
         self.assertEqual(config.CONST2, None)
-
         config = module.Config(config_file, CONST2='default2')
         self.assertEqual(config.CONST1, 'value1')
         self.assertEqual(config.CONST2, 'default2')

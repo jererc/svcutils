@@ -104,6 +104,8 @@ class Config:
         self.defaults = defaults
 
     def _load(self, file):
+        if not os.path.exists(file):
+            raise Exception(f'config file not found: {file}')
         spec = importlib.util.spec_from_file_location('config', file)
         config = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(config)
