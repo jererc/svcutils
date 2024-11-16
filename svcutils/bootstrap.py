@@ -5,8 +5,8 @@ import subprocess
 
 class Bootstrapper:
     def __init__(self, name, script_path, requires=None, force_reinstall=False,
-                 venv_dir='venv', task_schedule_mins=2,
-                 linux_args=None, windows_args=None):
+                 venv_dir='venv', task_schedule_mins=2, linux_args=None,
+                 windows_args=None):
         self.name = name
         self.script_path = os.path.realpath(script_path)
         if not os.path.exists(self.script_path):
@@ -90,8 +90,9 @@ class Bootstrapper:
 
     def run(self):
         self._setup_venv()
-        if os.name == 'nt':
-            self._setup_windows_task(cmd=self._get_cmd(self.windows_args),
-                task_name=self.name)
-        else:
-            self._setup_linux_task(cmd=self._get_cmd(self.linux_args))
+        if self.task_schedule_mins is not None:
+            if os.name == 'nt':
+                self._setup_windows_task(cmd=self._get_cmd(self.windows_args),
+                    task_name=self.name)
+            else:
+                self._setup_linux_task(cmd=self._get_cmd(self.linux_args))
