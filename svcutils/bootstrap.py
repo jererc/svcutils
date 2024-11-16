@@ -9,6 +9,8 @@ class Bootstrapper:
                  linux_args=None, windows_args=None):
         self.name = name
         self.script_path = os.path.realpath(script_path)
+        if not os.path.exists(self.script_path):
+            raise Exception(f'file not found: {script_path}')
         self.requires = requires
         self.force_reinstall = force_reinstall
         self.venv_dir = venv_dir
