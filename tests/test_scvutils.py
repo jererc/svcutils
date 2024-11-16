@@ -207,6 +207,29 @@ class MustRunTestCase(unittest.TestCase):
             )._must_run())
 
 
+class TargetTestCase(unittest.TestCase):
+    def setUp(self):
+        remove_path(WORK_PATH)
+        makedirs(WORK_PATH)
+
+    def test_run_once(self):
+        self.res = False
+
+        def target(p1, p2, p3=None):
+            print((p1, p2, p3))
+            self.res = p1 == 1 and p2 == 2 and p3 == 3
+
+        svc = module.Service(
+            target=target,
+            args=(1, 2),
+            kwargs={'p3': 3},
+            work_path=WORK_PATH,
+            run_delta=1,
+        )
+        svc.run_once()
+        self.assertTrue(self.res)
+
+
 class ServiceTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_PATH)
