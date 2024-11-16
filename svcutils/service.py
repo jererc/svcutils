@@ -46,10 +46,13 @@ def get_logger(path, name):
     return logger
 
 
-def load_config(path):
+def load_config(path, **defaults):
     spec = importlib.util.spec_from_file_location('config', path)
     config = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(config)
+    for k, v in defaults.items():
+        if not hasattr(config, k):
+            setattr(config, k, v)
     return config
 
 

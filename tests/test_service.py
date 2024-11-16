@@ -30,6 +30,25 @@ def makedirs(x):
         os.makedirs(x)
 
 
+class ConfigTestCase(unittest.TestCase):
+    def setUp(self):
+        self.target = int
+        self.work_path = WORK_PATH
+
+    def test_1(self):
+        config_file = os.path.join(WORK_PATH, 'config.py')
+        with open(config_file, 'w') as fd:
+            fd.write("""CONST1 = 'value1'""")
+
+        config = module.load_config(config_file)
+        self.assertEqual(config.CONST1, 'value1')
+        self.assertFalse(hasattr(config, 'CONST2'))
+
+        config = module.load_config(config_file, CONST2='default2')
+        self.assertEqual(config.CONST1, 'value1')
+        self.assertEqual(config.CONST2, 'default2')
+
+
 class ServiceTrackerTestCase(unittest.TestCase):
     def setUp(self):
         self.target = int
