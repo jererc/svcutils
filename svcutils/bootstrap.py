@@ -1,20 +1,20 @@
 import ctypes
 import os
 import subprocess
+import urllib.request
 
 
 class Bootstrapper:
-    def __init__(self, name, target_path, requires=None, force_reinstall=False,
-                 venv_dir='venv', schedule_mins=2, args=None):
+    def __init__(self, name, target_url, target_dir, target_args=None,
+                 requires=None, force_reinstall=False, venv_dir='venv',
+                 schedule_mins=2):
         self.name = name
-        self.target_path = os.path.realpath(target_path)
-        if not os.path.exists(self.target_path):
-            raise Exception(f'target not found: {target_path}')
+        self.target_file = self._get_target_file(target_url, target_dir)
+        self.target_args = target_args
         self.requires = requires
         self.force_reinstall = force_reinstall
         self.venv_dir = venv_dir
         self.schedule_mins = schedule_mins
-        self.args = args
         self.root_venv_path = os.path.join(os.path.expanduser('~'),
             self.venv_dir)
         self.venv_path = os.path.join(self.root_venv_path, self.name)
@@ -26,6 +26,22 @@ class Bootstrapper:
             'nt': os.path.join(self.venv_path, r'Scripts\pythonw.exe'),
             'posix': os.path.join(self.venv_path, 'bin/python'),
         }[os.name]
+
+    def _get_target_file(self, url, path):
+        content = urllib.request.urlopen(url).read().decode('utf-8')
+        file = os.path.join(os.path.realpath(path), os.path.basename(url))
+        if os.path.exists(file):
+            with open(file, 'r', encoding='utf-8') as fd:
+                file_content = fd.read()
+        else:
+            file_content = None
+        if content != file_content:
+            with open(file, 'w', encoding='utf-8') as fd:
+                fd.write(content)
+            print(f'updated target {file}')
+        else:
+            print(f'target {file} has not changed')
+        return file
 
     def _setup_venv(self):
         if not os.path.exists(self.root_venv_path):
@@ -91,8 +107,8 @@ class Bootstrapper:
             '/tn', task_name])
 
     def _get_cmd(self):
-        args_str = f' {" ".join(self.args)}' if self.args else ''
-        return f'{self.svc_py_path} {self.target_path}{args_str}'
+        args_str = f' {" ".join(self.target_args)}' if self.target_args else ''
+        return f'{self.svc_py_path} {self.target_file}{args_str}'
 
     def run(self):
         self._setup_venv()
