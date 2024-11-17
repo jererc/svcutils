@@ -79,13 +79,6 @@ class Bootstrapper:
     def _setup_windows_task(self, cmd, task_name):
         if ctypes.windll.shell32.IsUserAnAdmin() == 0:
             raise SystemExit('Failed: must run as admin')
-        # try:
-        #     subprocess.check_call(['schtasks', '/end',
-        #         '/tn', task_name])
-        #     subprocess.check_call(['schtasks', '/delete',
-        #         '/tn', task_name, '/f'])
-        # except subprocess.CalledProcessError:
-        #     pass
         subprocess.check_call(['schtasks', '/create',
             '/tn', task_name,
             '/tr', cmd,
