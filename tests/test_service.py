@@ -12,8 +12,7 @@ import psutil
 from svcutils import service as module
 
 
-TEST_DIR = '_test_svcutils'
-WORK_PATH = os.path.join(os.path.expanduser('~'), TEST_DIR)
+WORK_PATH = os.path.join(os.path.expanduser('~'), '_test_svcutils')
 
 module.logger.setLevel(logging.DEBUG)
 
