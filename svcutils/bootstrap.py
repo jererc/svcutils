@@ -14,7 +14,7 @@ class Bootstrapper:
         self.force_reinstall = force_reinstall
         self.venv_dir = venv_dir
         self.schedule_mins = schedule_mins
-        self.args = self.args
+        self.args = args
         self.root_venv_path = os.path.join(os.path.expanduser('~'),
             self.venv_dir)
         self.venv_path = os.path.join(self.root_venv_path, self.name)
