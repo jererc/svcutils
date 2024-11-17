@@ -82,7 +82,6 @@ class Bootstrapper:
         try:
             subprocess.check_call(['schtasks', '/end',
                 '/tn', task_name,
-                '/f',
             ])
             subprocess.check_call(['schtasks', '/delete',
                 '/tn', task_name,
