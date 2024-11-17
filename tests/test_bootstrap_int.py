@@ -56,22 +56,24 @@ class BootstrapperTestCase(unittest.TestCase):
             'target_args': ['save', '--task'],
         }
         bs = module.Bootstrapper(**args)
-        self.assertTrue(os.path.exists(bs.target_file))
-        mtime1 = os.stat(bs.target_file).st_mtime
-        with open(bs.target_file) as fd:
+        cmd = bs._get_cmd().split(' ')
+        print(cmd)
+        target_file = cmd[1]
+        self.assertTrue(os.path.exists(target_file))
+        self.assertEqual(cmd[2:], args['target_args'])
+        mtime1 = os.stat(target_file).st_mtime
+        with open(target_file) as fd:
             content1 = fd.read()
         self.assertTrue(content1)
 
         time.sleep(.5)
         bs2 = module.Bootstrapper(**args)
-        self.assertTrue(os.path.exists(bs2.target_file))
-        mtime2 = os.stat(bs2.target_file).st_mtime
-        with open(bs.target_file) as fd:
+        cmd2 = bs2._get_cmd().split(' ')
+        target_file2 = cmd2[1]
+        self.assertTrue(os.path.exists(target_file2))
+        mtime2 = os.stat(target_file2).st_mtime
+        with open(target_file2) as fd:
             content2 = fd.read()
         self.assertTrue(content2)
-
         self.assertEqual(content2, content1)
         self.assertEqual(mtime2, mtime1)
-        cmd = bs._get_cmd()
-        self.assertEqual(cmd.split(' ')[1:],
-            [bs.target_file] + args['target_args'])

@@ -9,7 +9,8 @@ class Bootstrapper:
                  requires=None, force_reinstall=False, venv_dir='venv',
                  schedule_mins=2):
         self.name = name
-        self.target_file = self._get_target_file(target_url, target_dir)
+        self.target_url = target_url
+        self.target_dir = target_dir
         self.target_args = target_args
         self.requires = requires
         self.force_reinstall = force_reinstall
@@ -27,22 +28,6 @@ class Bootstrapper:
             'posix': os.path.join(self.venv_path, 'bin/python'),
         }[os.name]
 
-    def _get_target_file(self, url, path):
-        content = urllib.request.urlopen(url).read().decode('utf-8')
-        file = os.path.join(os.path.realpath(path), os.path.basename(url))
-        if os.path.exists(file):
-            with open(file, 'r', encoding='utf-8') as fd:
-                file_content = fd.read()
-        else:
-            file_content = None
-        if content != file_content:
-            with open(file, 'w', encoding='utf-8') as fd:
-                fd.write(content)
-            print(f'updated target {file}')
-        else:
-            print(f'target {file} has not changed')
-        return file
-
     def _setup_venv(self):
         if not os.path.exists(self.root_venv_path):
             os.makedirs(self.root_venv_path)
@@ -55,7 +40,29 @@ class Bootstrapper:
             if self.force_reinstall:
                 base_cmd.append('--force-reinstall')
             subprocess.check_call(base_cmd + self.requires)
-        print(f'Created the virtualenv in {self.venv_path}')
+        print(f'created the virtualenv {self.venv_path}')
+
+    def _get_target_file(self):
+        print(f'downloading {self.target_url}')
+        content = urllib.request.urlopen(
+            self.target_url).read().decode('utf-8')
+        file = os.path.join(os.path.realpath(self.target_dir),
+            os.path.basename(self.target_url))
+        if os.path.exists(file):
+            with open(file, 'r', encoding='utf-8') as fd:
+                file_content = fd.read()
+        else:
+            file_content = None
+        if content != file_content:
+            with open(file, 'w', encoding='utf-8') as fd:
+                fd.write(content)
+            print(f'updated target {file}')
+        return file
+
+    def _get_cmd(self):
+        target_file = self._get_target_file()
+        args_str = f' {" ".join(self.target_args)}' if self.target_args else ''
+        return f'{self.svc_py_path} {target_file}{args_str}'
 
     def _generate_crontab_schedule(self):
         match self.schedule_mins:
@@ -89,12 +96,12 @@ class Bootstrapper:
         res = subprocess.run(['crontab', '-'], input=updated_crontab,
             text=True)
         if res.returncode != 0:
-            raise SystemExit('Failed to update crontab')
-        print('Successfully updated crontab')
+            raise SystemExit('failed to update crontab')
+        print(f'successfully updated crontab:\n{new_job}')
 
     def _setup_windows_task(self, cmd, task_name):
         if ctypes.windll.shell32.IsUserAnAdmin() == 0:
-            raise SystemExit('Failed: must run as admin')
+            raise SystemExit('must run as admin to update scheduled tasks')
         subprocess.check_call(['schtasks', '/create',
             '/tn', task_name,
             '/tr', cmd,
@@ -105,10 +112,6 @@ class Bootstrapper:
         ])
         subprocess.check_call(['schtasks', '/run',
             '/tn', task_name])
-
-    def _get_cmd(self):
-        args_str = f' {" ".join(self.target_args)}' if self.target_args else ''
-        return f'{self.svc_py_path} {self.target_file}{args_str}'
 
     def run(self):
         self._setup_venv()
