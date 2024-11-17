@@ -81,12 +81,9 @@ class Bootstrapper:
             raise SystemExit('Failed: must run as admin')
         try:
             subprocess.check_call(['schtasks', '/end',
-                '/tn', task_name,
-            ])
+                '/tn', task_name])
             subprocess.check_call(['schtasks', '/delete',
-                '/tn', task_name,
-                '/f',
-            ])
+                '/tn', task_name, '/f'])
         except subprocess.CalledProcessError:
             pass
         subprocess.check_call(['schtasks', '/create',
