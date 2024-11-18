@@ -161,7 +161,7 @@ class Bootstrap:
     def _get_cmd(self):
         script = os.path.join(self.venv_path, 'bin', self.script_name)
         args = f' {" ".join(self.script_args)}' if self.script_args else ''
-        return f'{self.svc_py_path} {script}{args}'
+        return f'{script}{args}'
 
     def _generate_crontab_schedule(self):
         match self.schedule_mins:
@@ -217,7 +217,7 @@ class Bootstrap:
         if self.schedule_mins is not None:
             cmd = self._get_cmd()
             print(f'cmd: {cmd}')
-            if os.name == 'nt':
-                self._setup_windows_task(cmd=cmd, task_name=self.script_name)
-            else:
-                self._setup_linux_task(cmd=cmd)
+            # if os.name == 'nt':
+            #     self._setup_windows_task(cmd=cmd, task_name=self.script_name)
+            # else:
+            #     self._setup_linux_task(cmd=cmd)
