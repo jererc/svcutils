@@ -135,13 +135,17 @@ class Bootstrap:
         self.root_venv_path = os.path.join(os.path.expanduser('~'),
             self.venv_dir)
         self.venv_path = os.path.join(self.root_venv_path, self.script_name)
+        self.venv_bin_path = {
+            'nt': os.path.join(self.venv_path, 'Scripts'),
+            'posix': os.path.join(self.venv_path, 'bin'),
+        }[os.name]
         self.pip_path = {
-            'nt': os.path.join(self.venv_path, r'Scripts\pip.exe'),
-            'posix': os.path.join(self.venv_path, 'bin/pip'),
+            'nt': os.path.join(self.venv_bin_path, 'pip.exe'),
+            'posix': os.path.join(self.venv_bin_path, 'pip'),
         }[os.name]
         self.svc_py_path = {
-            'nt': os.path.join(self.venv_path, r'Scripts\pythonw.exe'),
-            'posix': os.path.join(self.venv_path, 'bin/python'),
+            'nt': os.path.join(self.venv_bin_path, 'pythonw.exe'),
+            'posix': os.path.join(self.venv_bin_path, 'python'),
         }[os.name]
 
     def _setup_venv(self):
@@ -159,7 +163,7 @@ class Bootstrap:
         print(f'created the virtualenv {self.venv_path}')
 
     def _get_cmd(self):
-        script = os.path.join(self.venv_path, 'bin', self.script_name)
+        script = os.path.join(self.venv_bin_path, self.script_name)
         args = f' {" ".join(self.script_args)}' if self.script_args else ''
         return f'{script}{args}'
 
