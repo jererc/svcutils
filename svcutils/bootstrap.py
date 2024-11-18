@@ -124,17 +124,19 @@ class Bootstrapper:
 
 
 class Bootstrap:
-    def __init__(self, script_name, script_args=None, install_requires=None,
-                 force_reinstall=False, venv_dir='venv', schedule_mins=2):
-        self.script_name = script_name
-        self.script_args = script_args
+    def __init__(self, name, script_module, script_args=None,
+                 install_requires=None, force_reinstall=False,
+                 venv_dir='venv', schedule_mins=2):
+        self.name = name
+        self.script_module = script_module
+        self.script_args = script_args or []
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
         self.venv_dir = venv_dir
         self.schedule_mins = schedule_mins
         self.root_venv_path = os.path.join(os.path.expanduser('~'),
             self.venv_dir)
-        self.venv_path = os.path.join(self.root_venv_path, self.script_name)
+        self.venv_path = os.path.join(self.root_venv_path, self.name)
         self.venv_bin_path = {
             'nt': os.path.join(self.venv_path, 'Scripts'),
             'posix': os.path.join(self.venv_path, 'bin'),
@@ -162,10 +164,14 @@ class Bootstrap:
             subprocess.check_call(base_cmd + self.install_requires)
         print(f'created the virtualenv {self.venv_path}')
 
+    # def _get_cmd(self):
+    #     script = os.path.join(self.venv_bin_path, self.name)
+    #     args = f' {" ".join(self.script_args)}' if self.script_args else ''
+    #     return f'{script}{args}'
+
     def _get_cmd(self):
-        script = os.path.join(self.venv_bin_path, self.script_name)
-        args = f' {" ".join(self.script_args)}' if self.script_args else ''
-        return f'{script}{args}'
+        args = ['-m', self.script_module] + (self.script_args or [])
+        return f'{self.svc_py_path} {" ".join(args)}'
 
     def _generate_crontab_schedule(self):
         match self.schedule_mins:
@@ -222,6 +228,6 @@ class Bootstrap:
             cmd = self._get_cmd()
             print(f'cmd: {cmd}')
             if os.name == 'nt':
-                self._setup_windows_task(cmd=cmd, task_name=self.script_name)
+                self._setup_windows_task(cmd=cmd, task_name=self.name)
             else:
                 self._setup_linux_task(cmd=cmd)
