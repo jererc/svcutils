@@ -217,7 +217,7 @@ class Bootstrap:
         if self.schedule_mins is not None:
             cmd = self._get_cmd()
             print(f'cmd: {cmd}')
-            # if os.name == 'nt':
-            #     self._setup_windows_task(cmd=cmd, task_name=self.script_name)
-            # else:
-            #     self._setup_linux_task(cmd=cmd)
+            if os.name == 'nt':
+                self._setup_windows_task(cmd=cmd, task_name=self.script_name)
+            else:
+                self._setup_linux_task(cmd=cmd)
