@@ -164,11 +164,6 @@ class Bootstrap:
             subprocess.check_call(base_cmd + self.install_requires)
         print(f'created the virtualenv {self.venv_path}')
 
-    # def _get_cmd(self):
-    #     script = os.path.join(self.venv_bin_path, self.name)
-    #     args = f' {" ".join(self.script_args)}' if self.script_args else ''
-    #     return f'{script}{args}'
-
     def _get_cmd(self):
         args = ['-m', self.script_module] + (self.script_args or [])
         return f'{self.svc_py_path} {" ".join(args)}'
