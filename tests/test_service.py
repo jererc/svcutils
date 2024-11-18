@@ -59,25 +59,25 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.work_path = WORK_PATH
 
     def test_params(self):
-        st = module.ServiceTracker(self.work_path, min_runtime=1)
-        self.assertEqual(st.runtime_precision, 0)
+        st = module.ServiceTracker(self.work_path, min_uptime=1)
+        self.assertEqual(st.uptime_precision, 0)
         self.assertEqual(st.check_delta, 1)
 
-        st = module.ServiceTracker(self.work_path, min_runtime=0)
-        self.assertEqual(st.runtime_precision, 0)
+        st = module.ServiceTracker(self.work_path, min_uptime=0)
+        self.assertEqual(st.uptime_precision, 0)
         self.assertEqual(st.check_delta, 0)
 
-        st = module.ServiceTracker(self.work_path, min_runtime=30)
-        self.assertEqual(st.runtime_precision, 15)
+        st = module.ServiceTracker(self.work_path, min_uptime=30)
+        self.assertEqual(st.uptime_precision, 15)
         self.assertEqual(st.check_delta, 45)
 
-        st = module.ServiceTracker(self.work_path, min_runtime=60,
-            runtime_precision=10)
-        self.assertEqual(st.runtime_precision, 10)
+        st = module.ServiceTracker(self.work_path, min_uptime=60,
+            uptime_precision=10)
+        self.assertEqual(st.uptime_precision, 10)
         self.assertEqual(st.check_delta, 70)
 
     def test_update(self):
-        st = module.ServiceTracker(self.work_path, min_runtime=1)
+        st = module.ServiceTracker(self.work_path, min_uptime=1)
         end_ts = time.time() + st.check_delta * 2
         while time.time() < end_ts:
             time.sleep(.1)
@@ -85,8 +85,8 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertTrue(st.data[0][0] > time.time() - st.check_delta)
 
     def test_check(self):
-        st = module.ServiceTracker(self.work_path, min_runtime=40,
-            requires_online=False, runtime_precision=10)
+        st = module.ServiceTracker(self.work_path, min_uptime=40,
+            requires_online=False, uptime_precision=10)
 
         now = time.time()
         st.data = [
@@ -128,8 +128,8 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertTrue(st.check())
 
     def test_check_online(self):
-        st = module.ServiceTracker(self.work_path, min_runtime=40,
-            requires_online=True, runtime_precision=10)
+        st = module.ServiceTracker(self.work_path, min_uptime=40,
+            requires_online=True, uptime_precision=10)
 
         now = time.time()
         st.data = [
@@ -353,7 +353,7 @@ class RuntimeTestCase(unittest.TestCase):
             target=target,
             work_path=WORK_PATH,
             run_delta=1,
-            min_runtime=5,
+            min_uptime=5,
             requires_online=True,
         )
         with patch.object(psutil, 'cpu_percent') as mock_cpu_percent, \
@@ -376,7 +376,7 @@ class RuntimeTestCase(unittest.TestCase):
             target=target,
             work_path=WORK_PATH,
             run_delta=1,
-            min_runtime=5,
+            min_uptime=5,
             requires_online=True,
         )
         with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:

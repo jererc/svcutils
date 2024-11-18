@@ -130,24 +130,24 @@ class RunFile:
 
 
 class ServiceTracker:
-    def __init__(self, work_path, min_runtime, requires_online=False,
-            runtime_precision=None):
+    def __init__(self, work_path, min_uptime, requires_online=False,
+            uptime_precision=None):
         self.file = os.path.join(work_path, 'tracker.json')
-        self.min_runtime = min_runtime
+        self.min_uptime = min_uptime
         self.requires_online = requires_online
-        self.runtime_precision = self._get_runtime_precision(runtime_precision)
+        self.uptime_precision = self._get_uptime_precision(uptime_precision)
         self.check_delta = self._get_check_delta()
         self.data = self._load()
 
-    def _get_runtime_precision(self, runtime_precision):
+    def _get_uptime_precision(self, uptime_precision):
         try:
-            return runtime_precision or self.min_runtime // 2
+            return uptime_precision or self.min_uptime // 2
         except TypeError:
             return None
 
     def _get_check_delta(self):
         try:
-            return self.min_runtime + self.runtime_precision
+            return self.min_uptime + self.uptime_precision
         except TypeError:
             return None
 
@@ -172,12 +172,12 @@ class ServiceTracker:
         now = time.time()
         tds = [int(t - now) for t, o in self.data
             if t > now - self.check_delta and (o or not self.requires_online)]
-        val = set([int((r + self.check_delta) // self.runtime_precision)
+        val = set([int((r + self.check_delta) // self.uptime_precision)
             for r in tds])
-        expected = set(range(0, self.check_delta // self.runtime_precision))
+        expected = set(range(0, self.check_delta // self.uptime_precision))
         res = val >= expected
         if not res:
-            logger.info(f'runtime is less than {self.min_runtime} seconds '
+            logger.info(f'uptime is less than {self.min_uptime} seconds '
                 f'(update deltas: {tds})')
         return res
 
@@ -185,7 +185,7 @@ class ServiceTracker:
 class Service:
     def __init__(self, target, work_path, args=None, kwargs=None,
                  run_delta=RUN_DELTA, force_run_delta=None,
-                 min_runtime=None, requires_online=False,
+                 min_uptime=None, requires_online=False,
                  max_cpu_percent=None, daemon_run_delta=RUN_DELTA):
         self.target = target
         self.args = args or ()
@@ -193,7 +193,7 @@ class Service:
         self.work_path = work_path
         self.run_delta = run_delta
         self.force_run_delta = force_run_delta or run_delta * 2
-        self.tracker = ServiceTracker(work_path, min_runtime,
+        self.tracker = ServiceTracker(work_path, min_uptime,
             requires_online)
         self.max_cpu_percent = max_cpu_percent
         self.daemon_run_delta = daemon_run_delta
