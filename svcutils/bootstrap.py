@@ -126,7 +126,7 @@ class Bootstrapper:
 class Bootstrap:
     def __init__(self, script_name, script_args=None, install_requires=None,
                  force_reinstall=False, venv_dir='venv', schedule_mins=2):
-        self.name = script_name
+        self.script_name = script_name
         self.script_args = script_args
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
