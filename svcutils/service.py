@@ -104,7 +104,7 @@ class ConfigNotFound(Exception):
 
 class Config:
     def __init__(self, file, **defaults):
-        self.file = os.path.realpath(file)
+        self.file = os.path.realpath(os.path.expanduser(file))
         self.config = self._load()
         self.defaults = defaults
 

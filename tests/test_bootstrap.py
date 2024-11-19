@@ -1,6 +1,5 @@
 import os
 import shutil
-import time
 import unittest
 from unittest.mock import patch
 
@@ -52,7 +51,18 @@ class TaskTestCase(unittest.TestCase):
             'script_args': ['arg', '--flag'],
         }
         bs = module.Bootstrapper(**args)
-        with patch.object(bs, '_setup_venv') as mock__setup_venv, \
+        self.assertEqual(bs.venv_path, os.path.join(os.path.expanduser('~'),
+            bs.venv_dir, args['name']))
+        bin_dirname = 'Scripts' if os.name == 'nt' else 'bin'
+        pip_filename = 'pip.exe' if os.name == 'nt' else 'pip'
+        py_filename = 'pythonw.exe' if os.name == 'nt' else 'python'
+        self.assertEqual(bs.pip_path, os.path.join(os.path.expanduser('~'),
+            bs.venv_dir, args['name'], bin_dirname, pip_filename))
+        self.assertEqual(bs.svc_py_path, os.path.join(os.path.expanduser('~'),
+            bs.venv_dir, args['name'], bin_dirname, py_filename))
+
+        with patch.object(bs, '_setup_venv'), \
+                patch('builtins.input', return_value=''), \
                 patch.object(bs, '_setup_windows_task'
                     ) as mock__setup_windows_task, \
                 patch.object(bs, '_setup_linux_task'

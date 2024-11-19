@@ -3,32 +3,33 @@ import os
 import subprocess
 
 
+VENV_BIN_DIRNAME = {'nt': 'Scripts', 'posix': 'bin'}[os.name]
+VENV_PIP_PATH = {'nt': 'pip.exe', 'posix': 'pip'}[os.name]
+VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
+
+
 class Bootstrapper:
     def __init__(self, name, script_module, script_args=None,
                  install_requires=None, force_reinstall=False,
-                 venv_dir='venv', schedule_mins=2):
+                 venv_dir='venv', schedule_minutes=2):
         self.name = name
         self.script_module = script_module
         self.script_args = script_args or []
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
         self.venv_dir = venv_dir
-        self.schedule_mins = schedule_mins
+        self.schedule_minutes = schedule_minutes
         self.root_venv_path = os.path.join(os.path.expanduser('~'),
             self.venv_dir)
         self.venv_path = os.path.join(self.root_venv_path, self.name)
-        self.venv_bin_path = {
-            'nt': os.path.join(self.venv_path, 'Scripts'),
-            'posix': os.path.join(self.venv_path, 'bin'),
-        }[os.name]
-        self.pip_path = {
-            'nt': os.path.join(self.venv_bin_path, 'pip.exe'),
-            'posix': os.path.join(self.venv_bin_path, 'pip'),
-        }[os.name]
-        self.svc_py_path = {
-            'nt': os.path.join(self.venv_bin_path, 'pythonw.exe'),
-            'posix': os.path.join(self.venv_bin_path, 'python'),
-        }[os.name]
+        self.venv_bin_path = os.path.join(self.venv_path, VENV_BIN_DIRNAME)
+        self.pip_path = os.path.join(self.venv_bin_path, VENV_PIP_PATH)
+        self.svc_py_path = os.path.join(self.venv_bin_path, VENV_SVC_PY_PATH)
+        self.cmd = self._get_cmd()
+
+    def _get_cmd(self):
+        args = ['-m', self.script_module] + (self.script_args or [])
+        return f'{self.svc_py_path} {" ".join(args)}'
 
     def _setup_venv(self):
         if not os.path.exists(self.root_venv_path):
@@ -44,18 +45,14 @@ class Bootstrapper:
             subprocess.check_call(base_cmd + self.install_requires)
         print(f'created the virtualenv {self.venv_path}')
 
-    def _get_cmd(self):
-        args = ['-m', self.script_module] + (self.script_args or [])
-        return f'{self.svc_py_path} {" ".join(args)}'
-
     def _generate_crontab_schedule(self):
-        match self.schedule_mins:
-            case _ if self.schedule_mins < 2:
+        match self.schedule_minutes:
+            case _ if self.schedule_minutes < 2:
                 return '* * * * *'
-            case _ if self.schedule_mins < 60:
-                return f'*/{self.schedule_mins} * * * *'
-            case _ if self.schedule_mins < 60 * 24:
-                hours = self.schedule_mins // 60
+            case _ if self.schedule_minutes < 60:
+                return f'*/{self.schedule_minutes} * * * *'
+            case _ if self.schedule_minutes < 60 * 24:
+                hours = self.schedule_minutes // 60
                 if hours == 1:
                     return '0 * * * *'
                 return f'0 */{hours} * * *'
@@ -90,18 +87,27 @@ class Bootstrapper:
             '/tn', task_name,
             '/tr', cmd,
             '/sc', 'minute',
-            '/mo', str(self.schedule_mins),
+            '/mo', str(self.schedule_minutes),
             '/rl', 'highest',
             '/f',
         ])
         subprocess.check_call(['schtasks', '/run',
             '/tn', task_name])
 
-    def setup_task(self):
-        self._setup_venv()
-        cmd = self._get_cmd()
-        print(f'task cmd: {cmd}')
-        if os.name == 'nt':
-            self._setup_windows_task(cmd=cmd, task_name=self.name)
+    def _confirm(self):
+        print(f"""create virtualenv: {self.venv_path}
+task command: {self.cmd}
+schedule recurrence: {self.schedule_minutes} minutes""")
+        res = input("Do you want to continue? [Y/n]: ").strip().lower()
+        if res in ('y', 'yes', ''):
+            print('Continuing...')
         else:
-            self._setup_linux_task(cmd=cmd)
+            raise SystemExit('Exited')
+
+    def setup_task(self):
+        self._confirm()
+        self._setup_venv()
+        if os.name == 'nt':
+            self._setup_windows_task(cmd=self.cmd, task_name=self.name)
+        else:
+            self._setup_linux_task(cmd=self.cmd)
