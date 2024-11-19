@@ -101,7 +101,7 @@ class Bootstrapper:
             fd.write(f"""@echo off
 {cmd}
 """)
-        print(f'created script fie: {file}')
+        print(f'created the script {file}')
 
     def _setup_linux_script(self, cmd):
         file = os.path.join(os.getcwd(), f'{self.name}.sh')
@@ -109,7 +109,7 @@ class Bootstrapper:
             fd.write(f"""#!/bin/bash
 {cmd}
 """)
-        print(f'created script fie: {file}')
+        print(f'created the script {file}')
 
     def setup_task(self):
         cmd = self._get_cmd()
