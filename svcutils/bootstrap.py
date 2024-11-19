@@ -14,7 +14,7 @@ class Bootstrapper:
                  venv_dir='venv', schedule_minutes=2):
         self.name = name
         self.script_module = script_module
-        self.script_args = script_args or []
+        self.script_args = script_args
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
         self.venv_dir = venv_dir
