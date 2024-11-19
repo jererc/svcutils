@@ -98,15 +98,20 @@ def with_lockfile(path):
     return decorator
 
 
+class ConfigNotFound(Exception):
+    pass
+
+
 class Config:
     def __init__(self, file, **defaults):
-        self.config = self._load(file)
+        self.file = os.path.realpath(file)
+        self.config = self._load()
         self.defaults = defaults
 
-    def _load(self, file):
-        if not os.path.exists(file):
-            raise Exception(f'config file not found: {file}')
-        spec = importlib.util.spec_from_file_location('config', file)
+    def _load(self):
+        if not os.path.exists(self.file):
+            raise ConfigNotFound(self.file)
+        spec = importlib.util.spec_from_file_location('config', self.file)
         config = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(config)
         return config
