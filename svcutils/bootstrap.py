@@ -97,12 +97,11 @@ class Bootstrapper:
         subprocess.check_call(['schtasks', '/run',
             '/tn', task_name])
 
-    def run(self):
+    def setup_task(self):
         self._setup_venv()
-        if self.schedule_mins is not None:
-            cmd = self._get_cmd()
-            print(f'cmd: {cmd}')
-            if os.name == 'nt':
-                self._setup_windows_task(cmd=cmd, task_name=self.name)
-            else:
-                self._setup_linux_task(cmd=cmd)
+        cmd = self._get_cmd()
+        print(f'task cmd: {cmd}')
+        if os.name == 'nt':
+            self._setup_windows_task(cmd=cmd, task_name=self.name)
+        else:
+            self._setup_linux_task(cmd=cmd)
