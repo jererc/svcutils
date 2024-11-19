@@ -95,7 +95,7 @@ class Bootstrapper:
             '/tn', task_name])
 
     def _confirm(self):
-        print(f"""create virtualenv: {self.venv_path}
+        print(f"""virtualenv path: {self.venv_path}
 task command: {self.cmd}
 schedule recurrence: {self.schedule_minutes} minutes""")
         res = input("Do you want to continue? [Y/n]: ").strip().lower()
