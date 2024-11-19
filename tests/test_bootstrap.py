@@ -1,3 +1,4 @@
+from glob import glob
 import os
 import shutil
 import unittest
@@ -45,6 +46,8 @@ class CrontabTestCase(unittest.TestCase):
 
 class BootstrapperTestCase(unittest.TestCase):
     def setUp(self):
+        remove_path(WORK_PATH)
+        makedirs(WORK_PATH)
         self.args = {
             'name': 'name',
             'script_module': 'module.main',
@@ -76,6 +79,21 @@ class BootstrapperTestCase(unittest.TestCase):
             else:
                 cmd = mock__setup_linux_task.call_args_list[0].kwargs['cmd']
             cmd = cmd.split(' ')
+            print(cmd)
+            self.assertEqual(cmd[1:], ['-m', self.args['script_module']]
+                + self.args['script_args'])
+
+    def test_file(self):
+        with patch.object(self.bs, 'setup_venv'), \
+                patch('builtins.input', return_value=''), \
+                patch('os.getcwd', return_value=WORK_PATH):
+            self.bs.setup_script()
+            print(os.listdir(WORK_PATH))
+            files = glob(os.path.join(WORK_PATH, '*'))
+            self.assertTrue(files)
+            with open(files[0]) as fd:
+                lines = fd.read().splitlines()
+            cmd = lines[1].split(' ')
             print(cmd)
             self.assertEqual(cmd[1:], ['-m', self.args['script_module']]
                 + self.args['script_args'])
