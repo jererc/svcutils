@@ -14,7 +14,7 @@ class Bootstrapper:
                  venv_dir='venv', schedule_minutes=2):
         self.name = name
         self.script_module = script_module
-        self.script_args = script_args
+        self.script_args = script_args or []
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
         self.venv_dir = venv_dir
@@ -43,7 +43,7 @@ class Bootstrapper:
     def _get_cmd(self):
         if not self.script_module:
             raise SystemExit('missing script_module')
-        args = ['-m', self.script_module] + (self.script_args or [])
+        args = ['-m', self.script_module] + self.script_args
         return f'{self.svc_py_path} {" ".join(args)}'
 
     def _generate_crontab_schedule(self):

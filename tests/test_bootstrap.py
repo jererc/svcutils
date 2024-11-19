@@ -55,6 +55,13 @@ class BootstrapperTestCase(unittest.TestCase):
         }
         self.bs = module.Bootstrapper(**self.args)
 
+    def test_cmd(self):
+        bs = module.Bootstrapper(name='name')
+        self.assertRaises(SystemExit, bs._get_cmd)
+
+        bs = module.Bootstrapper(name='name', script_module='module.main')
+        self.assertEqual(bs._get_cmd().split(' ')[1:], ['-m', 'module.main'])
+
     def test_attrs(self):
         self.assertEqual(self.bs.venv_path, os.path.join(os.path.expanduser('~'),
             self.bs.venv_dir, self.args['name']))
