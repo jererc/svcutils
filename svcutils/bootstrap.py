@@ -31,7 +31,7 @@ class Bootstrapper:
         args = ['-m', self.script_module] + (self.script_args or [])
         return f'{self.svc_py_path} {" ".join(args)}'
 
-    def _setup_venv(self):
+    def setup_venv(self):
         if not os.path.exists(self.root_venv_path):
             os.makedirs(self.root_venv_path)
         if not os.path.exists(self.svc_py_path):
@@ -106,7 +106,7 @@ schedule recurrence: {self.schedule_minutes} minutes""")
 
     def setup_task(self):
         self._confirm()
-        self._setup_venv()
+        self.setup_venv()
         if os.name == 'nt':
             self._setup_windows_task(cmd=self.cmd, task_name=self.name)
         else:

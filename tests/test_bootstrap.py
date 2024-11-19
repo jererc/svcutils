@@ -22,24 +22,24 @@ def makedirs(path):
 
 
 class CrontabTestCase(unittest.TestCase):
-    def _get_bs(self, schedule_mins):
+    def _get_bs(self, schedule_minutes):
         return module.Bootstrapper(name='name', script_module='main',
-            schedule_mins=schedule_mins)
+            schedule_minutes=schedule_minutes)
 
     def test_1(self):
-        bs = self._get_bs(schedule_mins=1)
+        bs = self._get_bs(schedule_minutes=1)
         self.assertEqual(bs._generate_crontab_schedule(), '* * * * *')
 
     def test_2(self):
-        bs = self._get_bs(schedule_mins=15)
+        bs = self._get_bs(schedule_minutes=15)
         self.assertEqual(bs._generate_crontab_schedule(), '*/15 * * * *')
 
     def test_3(self):
-        bs = self._get_bs(schedule_mins=60 * 2 + 1)
+        bs = self._get_bs(schedule_minutes=60 * 2 + 1)
         self.assertEqual(bs._generate_crontab_schedule(), '0 */2 * * *')
 
     def test_4(self):
-        bs = self._get_bs(schedule_mins=24 * 60 + 1)
+        bs = self._get_bs(schedule_minutes=24 * 60 + 1)
         self.assertEqual(bs._generate_crontab_schedule(), '0 0 * * *')
 
 
@@ -61,7 +61,7 @@ class TaskTestCase(unittest.TestCase):
         self.assertEqual(bs.svc_py_path, os.path.join(os.path.expanduser('~'),
             bs.venv_dir, args['name'], bin_dirname, py_filename))
 
-        with patch.object(bs, '_setup_venv'), \
+        with patch.object(bs, 'setup_venv'), \
                 patch('builtins.input', return_value=''), \
                 patch.object(bs, '_setup_windows_task'
                     ) as mock__setup_windows_task, \
