@@ -30,10 +30,6 @@ def makedirs(x):
 
 
 class ConfigTestCase(unittest.TestCase):
-    def setUp(self):
-        self.target = int
-        self.work_path = WORK_PATH
-
     def test_1(self):
         self.assertRaises(Exception, module.Config, 'invalid')
 
