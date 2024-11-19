@@ -79,7 +79,7 @@ class Bootstrapper:
             text=True)
         if res.returncode != 0:
             raise SystemExit('failed to update crontab')
-        print(f'created the crontab {new_job.strip()}')
+        print(f'created the crontab job {new_job.strip()}')
 
     def _setup_windows_task(self, cmd, task_name):
         if ctypes.windll.shell32.IsUserAnAdmin() == 0:
