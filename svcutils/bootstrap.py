@@ -9,7 +9,7 @@ VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
 
 
 class Bootstrapper:
-    def __init__(self, name, script_module, script_args=None,
+    def __init__(self, name, script_module=None, script_args=None,
                  install_requires=None, force_reinstall=False,
                  venv_dir='venv', schedule_minutes=2):
         self.name = name
@@ -25,11 +25,6 @@ class Bootstrapper:
         self.venv_bin_path = os.path.join(self.venv_path, VENV_BIN_DIRNAME)
         self.pip_path = os.path.join(self.venv_bin_path, VENV_PIP_PATH)
         self.svc_py_path = os.path.join(self.venv_bin_path, VENV_SVC_PY_PATH)
-        self.cmd = self._get_cmd()
-
-    def _get_cmd(self):
-        args = ['-m', self.script_module] + (self.script_args or [])
-        return f'{self.svc_py_path} {" ".join(args)}'
 
     def setup_venv(self):
         if not os.path.exists(self.root_venv_path):
@@ -44,6 +39,12 @@ class Bootstrapper:
                 base_cmd.append('--force-reinstall')
             subprocess.check_call(base_cmd + self.install_requires)
         print(f'created the virtualenv {self.venv_path}')
+
+    def _get_cmd(self):
+        if not self.script_module:
+            raise SystemExit('missing script_module')
+        args = ['-m', self.script_module] + (self.script_args or [])
+        return f'{self.svc_py_path} {" ".join(args)}'
 
     def _generate_crontab_schedule(self):
         match self.schedule_minutes:
@@ -94,10 +95,14 @@ class Bootstrapper:
         subprocess.check_call(['schtasks', '/run',
             '/tn', task_name])
 
-    def _confirm(self):
-        print(f"""virtualenv path: {self.venv_path}
-task command: {self.cmd}
-schedule recurrence: {self.schedule_minutes} minutes""")
+    def _confirm(self, cmd):
+        if cmd:
+            msg2 = (f'\ntask command: {cmd}\n'
+                f'schedule recurrence: {self.schedule_minutes} minutes')
+        else:
+            msg2 = ''
+        msg = f'virtualenv path: {self.venv_path}{msg2}'
+        print(msg)
         res = input("Do you want to continue? [Y/n]: ").strip().lower()
         if res in ('y', 'yes', ''):
             print('Continuing...')
@@ -105,9 +110,10 @@ schedule recurrence: {self.schedule_minutes} minutes""")
             raise SystemExit('Exited')
 
     def setup_task(self):
-        self._confirm()
+        cmd = self._get_cmd()
+        self._confirm(cmd)
         self.setup_venv()
         if os.name == 'nt':
-            self._setup_windows_task(cmd=self.cmd, task_name=self.name)
+            self._setup_windows_task(cmd=cmd, task_name=self.name)
         else:
-            self._setup_linux_task(cmd=self.cmd)
+            self._setup_linux_task(cmd=cmd)
