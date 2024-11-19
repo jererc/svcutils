@@ -12,8 +12,6 @@ import sys
 import time
 
 
-RUN_DELTA = 60
-
 logger = logging.getLogger(__name__)
 
 
@@ -189,9 +187,9 @@ class ServiceTracker:
 
 class Service:
     def __init__(self, target, work_path, args=None, kwargs=None,
-                 run_delta=RUN_DELTA, force_run_delta=None,
+                 run_delta=60, force_run_delta=None,
                  min_uptime=None, requires_online=False,
-                 max_cpu_percent=None, daemon_run_delta=RUN_DELTA):
+                 max_cpu_percent=None, daemon_loop_delta=60):
         self.target = target
         self.args = args or ()
         self.kwargs = kwargs or {}
@@ -201,7 +199,7 @@ class Service:
         self.tracker = ServiceTracker(work_path, min_uptime,
             requires_online)
         self.max_cpu_percent = max_cpu_percent
-        self.daemon_run_delta = daemon_run_delta
+        self.daemon_loop_delta = daemon_loop_delta
         self.run_file = RunFile(os.path.join(work_path, 'service.run'))
 
     def _check_cpu_usage(self):
@@ -233,7 +231,7 @@ class Service:
                 finally:
                     self.run_file.touch()
         except Exception:
-            logger.exception('failed')
+            logger.exception('service failed')
 
     def run_once(self):
         @with_lockfile(self.work_path)
@@ -247,8 +245,8 @@ class Service:
         def run():
             while True:
                 self._attempt_run()
-                logger.debug(f'sleeping for {self.daemon_run_delta} seconds')
-                time.sleep(self.daemon_run_delta)
+                logger.debug(f'sleeping for {self.daemon_loop_delta} seconds')
+                time.sleep(self.daemon_loop_delta)
 
         run()
 
