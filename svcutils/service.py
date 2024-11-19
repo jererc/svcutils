@@ -136,7 +136,7 @@ class RunFile:
 
 class ServiceTracker:
     def __init__(self, work_path, min_uptime, requires_online=False,
-            uptime_precision=None):
+                 uptime_precision=None):
         self.file = os.path.join(work_path, 'tracker.json')
         self.min_uptime = min_uptime
         self.requires_online = requires_online
