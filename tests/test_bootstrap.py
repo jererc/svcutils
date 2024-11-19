@@ -43,7 +43,7 @@ class CrontabTestCase(unittest.TestCase):
         self.assertEqual(bs._generate_crontab_schedule(), '0 0 * * *')
 
 
-class TaskTestCase(unittest.TestCase):
+class BootstrapperTestCase(unittest.TestCase):
     def test_1(self):
         args = {
             'name': 'name',

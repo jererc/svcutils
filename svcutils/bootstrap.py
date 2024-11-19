@@ -95,14 +95,27 @@ class Bootstrapper:
         subprocess.check_call(['schtasks', '/run',
             '/tn', task_name])
 
-    def _confirm(self, cmd):
-        if cmd:
-            msg2 = (f'\ntask command: {cmd}\n'
-                f'schedule recurrence: {self.schedule_minutes} minutes')
-        else:
-            msg2 = ''
-        msg = f'virtualenv path: {self.venv_path}{msg2}'
-        print(msg)
+    def _setup_windows_script(self, cmd):
+        file = os.path.join(os.getcwd(), f'{self.name}.bat')
+        with open(file, 'w') as fd:
+            fd.write(f"""@echo off
+{cmd}
+""")
+        print(f'created script fie: {file}')
+
+    def _setup_linux_script(self, cmd):
+        file = os.path.join(os.getcwd(), f'{self.name}.sh')
+        with open(file, 'w') as fd:
+            fd.write(f"""#!/bin/bash
+{cmd}
+""")
+        print(f'created script fie: {file}')
+
+    def _confirm(self, extra_messages=None):
+        messages = [f'virtualenv path: {self.venv_path}']
+        if extra_messages:
+            messages += extra_messages
+        print('\n'.join(messages))
         res = input("Do you want to continue? [Y/n]: ").strip().lower()
         if res in ('y', 'yes', ''):
             print('Continuing...')
@@ -111,9 +124,21 @@ class Bootstrapper:
 
     def setup_task(self):
         cmd = self._get_cmd()
-        self._confirm(cmd)
+        self._confirm([
+            f'task command: {cmd}',
+            f'schedule recurrence: {self.schedule_minutes} minutes',
+        ])
         self.setup_venv()
         if os.name == 'nt':
             self._setup_windows_task(cmd=cmd, task_name=self.name)
         else:
             self._setup_linux_task(cmd=cmd)
+
+    def setup_script(self):
+        cmd = self._get_cmd()
+        self._confirm([f'command: {cmd}'])
+        self.setup_venv()
+        if os.name == 'nt':
+            self._setup_windows_script(cmd=cmd)
+        else:
+            self._setup_linux_script(cmd=cmd)
