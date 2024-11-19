@@ -291,7 +291,7 @@ class ServiceTestCase(unittest.TestCase):
                     target=target,
                     work_path=WORK_PATH,
                     run_delta=1,
-                    daemon_run_delta=.2,
+                    daemon_loop_delta=.2,
                 )
                 svc.run()
 
@@ -319,7 +319,7 @@ class ServiceTestCase(unittest.TestCase):
                     target=target,
                     work_path=WORK_PATH,
                     run_delta=1,
-                    daemon_run_delta=.2,
+                    daemon_loop_delta=.2,
                 )
                 svc.run()
 
