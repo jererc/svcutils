@@ -111,23 +111,10 @@ class Bootstrapper:
 """)
         print(f'created script fie: {file}')
 
-    def _confirm(self, extra_messages=None):
-        messages = [f'virtualenv path: {self.venv_path}']
-        if extra_messages:
-            messages += extra_messages
-        print('\n'.join(messages))
-        res = input("Do you want to continue? [Y/n]: ").strip().lower()
-        if res in ('y', 'yes', ''):
-            print('Continuing...')
-        else:
-            raise SystemExit('Exited')
-
     def setup_task(self):
         cmd = self._get_cmd()
-        self._confirm([
-            f'task command: {cmd}',
-            f'schedule recurrence: {self.schedule_minutes} minutes',
-        ])
+        print(f'cmd: {cmd}')
+        print(f'schedule recurrence: {self.schedule_minutes} minutes')
         self.setup_venv()
         if os.name == 'nt':
             self._setup_windows_task(cmd=cmd, task_name=self.name)
@@ -136,7 +123,7 @@ class Bootstrapper:
 
     def setup_script(self):
         cmd = self._get_cmd()
-        self._confirm([f'command: {cmd}'])
+        print(f'cmd: {cmd}')
         self.setup_venv()
         if os.name == 'nt':
             self._setup_windows_script(cmd=cmd)

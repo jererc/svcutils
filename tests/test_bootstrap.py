@@ -68,7 +68,6 @@ class BootstrapperTestCase(unittest.TestCase):
 
     def test_task(self):
         with patch.object(self.bs, 'setup_venv'), \
-                patch('builtins.input', return_value=''), \
                 patch.object(self.bs, '_setup_windows_task'
                     ) as mock__setup_windows_task, \
                 patch.object(self.bs, '_setup_linux_task'
