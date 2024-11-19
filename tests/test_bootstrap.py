@@ -44,35 +44,38 @@ class CrontabTestCase(unittest.TestCase):
 
 
 class BootstrapperTestCase(unittest.TestCase):
-    def test_1(self):
-        args = {
+    def setUp(self):
+        self.args = {
             'name': 'name',
             'script_module': 'module.main',
             'script_args': ['arg', '--flag'],
         }
-        bs = module.Bootstrapper(**args)
-        self.assertEqual(bs.venv_path, os.path.join(os.path.expanduser('~'),
-            bs.venv_dir, args['name']))
+        self.bs = module.Bootstrapper(**self.args)
+
+    def test_attrs(self):
+        self.assertEqual(self.bs.venv_path, os.path.join(os.path.expanduser('~'),
+            self.bs.venv_dir, self.args['name']))
         bin_dirname = 'Scripts' if os.name == 'nt' else 'bin'
         pip_filename = 'pip.exe' if os.name == 'nt' else 'pip'
         py_filename = 'pythonw.exe' if os.name == 'nt' else 'python'
-        self.assertEqual(bs.pip_path, os.path.join(os.path.expanduser('~'),
-            bs.venv_dir, args['name'], bin_dirname, pip_filename))
-        self.assertEqual(bs.svc_py_path, os.path.join(os.path.expanduser('~'),
-            bs.venv_dir, args['name'], bin_dirname, py_filename))
+        self.assertEqual(self.bs.pip_path, os.path.join(os.path.expanduser('~'),
+            self.bs.venv_dir, self.args['name'], bin_dirname, pip_filename))
+        self.assertEqual(self.bs.svc_py_path, os.path.join(os.path.expanduser('~'),
+            self.bs.venv_dir, self.args['name'], bin_dirname, py_filename))
 
-        with patch.object(bs, 'setup_venv'), \
+    def test_task(self):
+        with patch.object(self.bs, 'setup_venv'), \
                 patch('builtins.input', return_value=''), \
-                patch.object(bs, '_setup_windows_task'
+                patch.object(self.bs, '_setup_windows_task'
                     ) as mock__setup_windows_task, \
-                patch.object(bs, '_setup_linux_task'
+                patch.object(self.bs, '_setup_linux_task'
                     ) as mock__setup_linux_task:
-            bs.setup_task()
+            self.bs.setup_task()
             if os.name == 'nt':
                 cmd = mock__setup_windows_task.call_args_list[0].kwargs['cmd']
             else:
                 cmd = mock__setup_linux_task.call_args_list[0].kwargs['cmd']
             cmd = cmd.split(' ')
             print(cmd)
-            self.assertEqual(cmd[1:], ['-m', args['script_module']]
-                + args['script_args'])
+            self.assertEqual(cmd[1:], ['-m', self.args['script_module']]
+                + self.args['script_args'])
