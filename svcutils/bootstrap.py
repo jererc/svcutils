@@ -9,12 +9,10 @@ VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
 
 
 class Bootstrapper:
-    def __init__(self, name, script_module=None, script_args=None,
-                 install_requires=None, force_reinstall=False,
-                 venv_dir='venv', schedule_minutes=2):
+    def __init__(self, name, cmd_args=None, install_requires=None,
+                 force_reinstall=False, venv_dir='venv', schedule_minutes=2):
         self.name = name
-        self.script_module = script_module
-        self.script_args = script_args or []
+        self.cmd_args = cmd_args
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
         self.venv_dir = venv_dir
@@ -41,9 +39,9 @@ class Bootstrapper:
         print(f'created the virtualenv {self.venv_path}')
 
     def _get_cmd(self):
-        if not self.script_module:
-            raise SystemExit('missing script_module')
-        args = ['-m', self.script_module] + self.script_args
+        if not self.cmd_args:
+            raise SystemExit('missing cmd_args')
+        args = ['-m'] + self.cmd_args
         return f'{self.svc_py_path} {" ".join(args)}'
 
     def _generate_crontab_schedule(self):

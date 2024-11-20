@@ -24,7 +24,7 @@ def makedirs(path):
 
 class CrontabTestCase(unittest.TestCase):
     def _get_bs(self, schedule_minutes):
-        return module.Bootstrapper(name='name', script_module='main',
+        return module.Bootstrapper(name='name', cmd_args=['main'],
             schedule_minutes=schedule_minutes)
 
     def test_1(self):
@@ -50,8 +50,7 @@ class BootstrapperTestCase(unittest.TestCase):
         makedirs(WORK_PATH)
         self.args = {
             'name': 'name',
-            'script_module': 'module.main',
-            'script_args': ['arg', '--flag'],
+            'cmd_args': ['module.main', 'arg', '--flag'],
         }
         self.bs = module.Bootstrapper(**self.args)
 
@@ -59,7 +58,7 @@ class BootstrapperTestCase(unittest.TestCase):
         bs = module.Bootstrapper(name='name')
         self.assertRaises(SystemExit, bs._get_cmd)
 
-        bs = module.Bootstrapper(name='name', script_module='module.main')
+        bs = module.Bootstrapper(name='name', cmd_args=['module.main'])
         self.assertEqual(bs._get_cmd().split(' ')[1:], ['-m', 'module.main'])
 
     def test_attrs(self):
@@ -86,8 +85,7 @@ class BootstrapperTestCase(unittest.TestCase):
                 cmd = mock__setup_linux_task.call_args_list[0].kwargs['cmd']
             cmd = cmd.split(' ')
             print(cmd)
-            self.assertEqual(cmd[1:], ['-m', self.args['script_module']]
-                + self.args['script_args'])
+            self.assertEqual(cmd[1:], ['-m'] + self.args['cmd_args'])
 
     def test_file(self):
         with patch.object(self.bs, 'setup_venv'), \
@@ -101,5 +99,4 @@ class BootstrapperTestCase(unittest.TestCase):
                 lines = fd.read().splitlines()
             cmd = lines[1].split(' ')
             print(cmd)
-            self.assertEqual(cmd[1:], ['-m', self.args['script_module']]
-                + self.args['script_args'])
+            self.assertEqual(cmd[1:], ['-m'] + self.args['cmd_args'])
