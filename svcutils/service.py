@@ -167,7 +167,7 @@ class ServiceTracker:
         self.data = [r for r in self.data if r[0] > now - self.check_delta] \
             + [(int(now), int(is_online()))]
         with open(self.file, 'w') as fd:
-            fd.write(json.dumps(self.data))
+            json.dump(self.data, fd)
 
     def check(self):
         if not self.check_delta:
