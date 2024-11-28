@@ -10,12 +10,14 @@ VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
 
 class Bootstrapper:
     def __init__(self, name, cmd_args=None, install_requires=None,
-                 force_reinstall=False, venv_dir='venv', schedule_minutes=2):
+                 force_reinstall=False, venv_dir='venv', extra_cmds=None,
+                 schedule_minutes=2):
         self.name = name
         self.cmd_args = cmd_args
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
         self.venv_dir = venv_dir
+        self.extra_cmds = extra_cmds
         self.schedule_minutes = schedule_minutes
         self.root_venv_path = os.path.join(os.path.expanduser('~'),
             self.venv_dir)
@@ -36,6 +38,9 @@ class Bootstrapper:
             if self.force_reinstall:
                 base_cmd.append('--force-reinstall')
             subprocess.check_call(base_cmd + self.install_requires)
+        if self.extra_cmds:
+            for extra_cmd in self.extra_cmds:
+                subprocess.check_call([self.svc_py_path] + extra_cmd)
         print(f'created the virtualenv {self.venv_path}')
 
     def _get_cmd(self):

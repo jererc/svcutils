@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='svcutils',
-    version='2024.11.27.182857',
+    version='2024.11.28.191432',
     author='jererc',
     author_email='jererc@gmail.com',
     url='https://github.com/jererc/svcutils',
