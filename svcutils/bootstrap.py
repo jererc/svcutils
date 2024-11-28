@@ -38,10 +38,12 @@ class Bootstrapper:
             if self.force_reinstall:
                 base_cmd.append('--force-reinstall')
             subprocess.check_call(base_cmd + self.install_requires)
+        print(f'created the virtualenv {self.venv_path}')
         if self.extra_cmds:
             for extra_cmd in self.extra_cmds:
-                subprocess.check_call([self.svc_py_path] + extra_cmd)
-        print(f'created the virtualenv {self.venv_path}')
+                cmd = [self.svc_py_path] + extra_cmd
+                print(f'running {" ".join(cmd)}')
+                subprocess.check_call(cmd)
 
     def _get_cmd(self):
         if not self.cmd_args:
