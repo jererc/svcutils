@@ -50,8 +50,7 @@ class Bootstrapper:
     def _get_cmd(self):
         if not self.cmd_args:
             raise SystemExit('missing cmd_args')
-        args = ['-m'] + self.cmd_args
-        return f'{self.svc_py_path} {" ".join(args)}'
+        return ' '.join([self.svc_py_path, '-m'] + self.cmd_args)
 
     def _generate_crontab_schedule(self):
         match self.schedule_minutes:
