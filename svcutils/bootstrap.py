@@ -5,6 +5,7 @@ import subprocess
 
 VENV_BIN_DIRNAME = {'nt': 'Scripts', 'posix': 'bin'}[os.name]
 VENV_PIP_PATH = {'nt': 'pip.exe', 'posix': 'pip'}[os.name]
+VENV_PY_PATH = {'nt': 'python.exe', 'posix': 'python'}[os.name]
 VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
 
 
@@ -24,6 +25,7 @@ class Bootstrapper:
         self.venv_path = os.path.join(self.root_venv_path, self.name)
         self.venv_bin_path = os.path.join(self.venv_path, VENV_BIN_DIRNAME)
         self.pip_path = os.path.join(self.venv_bin_path, VENV_PIP_PATH)
+        self.py_path = os.path.join(self.venv_bin_path, VENV_PY_PATH)
         self.svc_py_path = os.path.join(self.venv_bin_path, VENV_SVC_PY_PATH)
 
     def setup_venv(self):
@@ -41,7 +43,7 @@ class Bootstrapper:
         print(f'created the virtualenv {self.venv_path}')
         if self.extra_cmds:
             for extra_cmd in self.extra_cmds:
-                cmd = [self.svc_py_path, '-m'] + extra_cmd
+                cmd = [self.py_path, '-m'] + extra_cmd
                 print(f'running {" ".join(cmd)}')
                 subprocess.check_call(cmd)
 
