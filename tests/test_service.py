@@ -12,7 +12,7 @@ import psutil
 from svcutils import service as module
 
 
-WORK_PATH = os.path.join(os.path.expanduser('~'), '_test_svcutils')
+WORK_PATH = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
 
 module.logger.setLevel(logging.DEBUG)
 
@@ -33,6 +33,7 @@ class ConfigTestCase(unittest.TestCase):
     def test_1(self):
         self.assertRaises(Exception, module.Config, 'invalid')
 
+        makedirs(WORK_PATH)
         config_file = os.path.join(WORK_PATH, 'config.py')
         with open(config_file, 'w') as fd:
             fd.write("""invalid""")
@@ -53,6 +54,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
     def setUp(self):
         self.target = int
         self.work_path = WORK_PATH
+        makedirs(WORK_PATH)
 
     def test_params(self):
         st = module.ServiceTracker(self.work_path, min_uptime=1)

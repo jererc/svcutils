@@ -7,7 +7,7 @@ from unittest.mock import patch
 from svcutils import bootstrap as module
 
 
-WORK_PATH = os.path.join(os.path.expanduser('~'), '_test_svcutils')
+WORK_PATH = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
 
 
 def remove_path(path):
