@@ -41,7 +41,7 @@ class Bootstrapper:
         print(f'created the virtualenv {self.venv_path}')
         if self.extra_cmds:
             for extra_cmd in self.extra_cmds:
-                cmd = [self.svc_py_path] + extra_cmd
+                cmd = [self.svc_py_path, '-m'] + extra_cmd
                 print(f'running {" ".join(cmd)}')
                 subprocess.check_call(cmd)
 
