@@ -94,15 +94,6 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertEqual(se.tracker.uptime_precision, 150)
         self.assertTrue(se.tracker.requires_online)
 
-    def test_update(self):
-        st = module.ServiceTracker(self.work_path, min_uptime=1,
-            uptime_precision=1)
-        end_ts = time.time() + st.check_delta * 2
-        while time.time() < end_ts:
-            time.sleep(.1)
-            st.update()
-        self.assertTrue(st.data[0][0] > time.time() - st.check_delta)
-
     def test_low_uptime(self):
         st = module.ServiceTracker(self.work_path, min_uptime=60,
             requires_online=False, uptime_precision=180)

@@ -173,8 +173,7 @@ class ServiceTracker:
         expected = set(range(0, self.check_delta // self.uptime_precision))
         res = val >= expected
         if not res:
-            logger.info(f'uptime is less than {self.min_uptime} seconds '
-                f'(update deltas: {tds})')
+            logger.info(f'uptime is less than {self.min_uptime} seconds')
         return res
 
 
