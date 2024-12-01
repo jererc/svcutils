@@ -133,26 +133,19 @@ class RunFile:
 
 
 class ServiceTracker:
-    def __init__(self, work_path, min_uptime, requires_online=False,
-                 uptime_precision=None):
+    def __init__(self, work_path, min_uptime=None, uptime_precision=180,
+                 requires_online=False):
         self.file = os.path.join(work_path, 'tracker.json')
         self.min_uptime = min_uptime
+        self.uptime_precision = uptime_precision
         self.requires_online = requires_online
-        self.uptime_precision = self._get_uptime_precision(uptime_precision)
         self.check_delta = self._get_check_delta()
         self.data = self._load()
 
-    def _get_uptime_precision(self, uptime_precision):
-        try:
-            return uptime_precision or self.min_uptime // 2
-        except TypeError:
-            return None
-
     def _get_check_delta(self):
-        try:
-            return self.min_uptime + self.uptime_precision
-        except TypeError:
+        if not self.min_uptime:
             return None
+        return self.min_uptime + self.uptime_precision
 
     def _load(self):
         if not os.path.exists(self.file):
@@ -187,19 +180,17 @@ class ServiceTracker:
 
 class Service:
     def __init__(self, target, work_path, args=None, kwargs=None,
-                 run_delta=60, force_run_delta=None,
-                 min_uptime=None, requires_online=False,
-                 max_cpu_percent=None, daemon_loop_delta=60):
+                 run_delta=60, force_run_delta=None, max_cpu_percent=None,
+                 daemon_loop_delta=60, **tracker_args):
         self.target = target
         self.args = args or ()
         self.kwargs = kwargs or {}
         self.work_path = work_path
         self.run_delta = run_delta
         self.force_run_delta = force_run_delta or run_delta * 2
-        self.tracker = ServiceTracker(work_path, min_uptime,
-            requires_online)
         self.max_cpu_percent = max_cpu_percent
         self.daemon_loop_delta = daemon_loop_delta
+        self.tracker = ServiceTracker(work_path, **tracker_args)
         self.run_file = RunFile(os.path.join(work_path, 'service.run'))
 
     def _check_cpu_usage(self):

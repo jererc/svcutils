@@ -57,30 +57,70 @@ class ServiceTrackerTestCase(unittest.TestCase):
         makedirs(WORK_PATH)
 
     def test_params(self):
-        st = module.ServiceTracker(self.work_path, min_uptime=1)
-        self.assertEqual(st.uptime_precision, 0)
-        self.assertEqual(st.check_delta, 1)
+        st = module.ServiceTracker(self.work_path)
+        self.assertEqual(st.check_delta, None)
 
         st = module.ServiceTracker(self.work_path, min_uptime=0)
-        self.assertEqual(st.uptime_precision, 0)
-        self.assertEqual(st.check_delta, 0)
+        self.assertEqual(st.check_delta, None)
 
-        st = module.ServiceTracker(self.work_path, min_uptime=30)
-        self.assertEqual(st.uptime_precision, 15)
-        self.assertEqual(st.check_delta, 45)
+        st = module.ServiceTracker(self.work_path, min_uptime=1)
+        self.assertEqual(st.check_delta, 181)
+        self.assertEqual(st.uptime_precision, 180)
 
         st = module.ServiceTracker(self.work_path, min_uptime=60,
             uptime_precision=10)
         self.assertEqual(st.uptime_precision, 10)
         self.assertEqual(st.check_delta, 70)
 
+    def test_service_params(self):
+        se = module.Service(
+            target=self.target,
+            work_path=self.work_path,
+            run_delta=10,
+        )
+        self.assertEqual(se.tracker.min_uptime, None)
+        self.assertEqual(se.tracker.uptime_precision, 180)
+        self.assertFalse(se.tracker.requires_online)
+
+        se = module.Service(
+            target=self.target,
+            work_path=self.work_path,
+            run_delta=10,
+            min_uptime=300,
+            uptime_precision=150,
+            requires_online=True,
+        )
+        self.assertEqual(se.tracker.min_uptime, 300)
+        self.assertEqual(se.tracker.uptime_precision, 150)
+        self.assertTrue(se.tracker.requires_online)
+
     def test_update(self):
-        st = module.ServiceTracker(self.work_path, min_uptime=1)
+        st = module.ServiceTracker(self.work_path, min_uptime=1,
+            uptime_precision=1)
         end_ts = time.time() + st.check_delta * 2
         while time.time() < end_ts:
             time.sleep(.1)
             st.update()
         self.assertTrue(st.data[0][0] > time.time() - st.check_delta)
+
+    def test_low_uptime(self):
+        st = module.ServiceTracker(self.work_path, min_uptime=60,
+            requires_online=False, uptime_precision=180)
+
+        now = time.time()
+        st.data = [
+            [now - 241, 1],
+            [now, 1],
+        ]
+        self.assertFalse(st.check())
+
+        now = time.time()
+        st.data = [
+            [now - 241, 1],
+            [now - 121, 1],
+            [now, 1],
+        ]
+        self.assertTrue(st.check())
 
     def test_check(self):
         st = module.ServiceTracker(self.work_path, min_uptime=40,
