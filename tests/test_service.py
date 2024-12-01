@@ -64,12 +64,12 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertEqual(st.check_delta, None)
 
         st = module.ServiceTracker(self.work_path, min_uptime=1)
-        self.assertEqual(st.check_delta, 121)
-        self.assertEqual(st.update_delta, 120)
+        self.assertEqual(st.check_delta, 181)
+        self.assertEqual(st.uptime_precision, 180)
 
         st = module.ServiceTracker(self.work_path, min_uptime=60,
-            update_delta=10)
-        self.assertEqual(st.update_delta, 10)
+            uptime_precision=10)
+        self.assertEqual(st.uptime_precision, 10)
         self.assertEqual(st.check_delta, 70)
 
     def test_service_params(self):
@@ -79,7 +79,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
             run_delta=10,
         )
         self.assertEqual(se.tracker.min_uptime, None)
-        self.assertEqual(se.tracker.update_delta, 120)
+        self.assertEqual(se.tracker.uptime_precision, 180)
         self.assertFalse(se.tracker.requires_online)
 
         se = module.Service(
@@ -87,16 +87,16 @@ class ServiceTrackerTestCase(unittest.TestCase):
             work_path=self.work_path,
             run_delta=10,
             min_uptime=300,
-            update_delta=60,
+            uptime_precision=150,
             requires_online=True,
         )
         self.assertEqual(se.tracker.min_uptime, 300)
-        self.assertEqual(se.tracker.update_delta, 60)
+        self.assertEqual(se.tracker.uptime_precision, 150)
         self.assertTrue(se.tracker.requires_online)
 
     def test_low_uptime(self):
         st = module.ServiceTracker(self.work_path, min_uptime=60,
-            requires_online=False, update_delta=180)
+            requires_online=False, uptime_precision=180)
 
         now = time.time()
         st.data = [
@@ -115,7 +115,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
     def test_check(self):
         st = module.ServiceTracker(self.work_path, min_uptime=40,
-            requires_online=False, update_delta=10)
+            requires_online=False, uptime_precision=10)
 
         now = time.time()
         st.data = [
@@ -158,7 +158,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
     def test_check_online(self):
         st = module.ServiceTracker(self.work_path, min_uptime=40,
-            requires_online=True, update_delta=10)
+            requires_online=True, uptime_precision=10)
 
         now = time.time()
         st.data = [

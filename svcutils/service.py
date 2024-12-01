@@ -133,11 +133,11 @@ class RunFile:
 
 
 class ServiceTracker:
-    def __init__(self, work_path, min_uptime=None, update_delta=120,
+    def __init__(self, work_path, min_uptime=None, uptime_precision=180,
                  requires_online=False):
         self.file = os.path.join(work_path, 'tracker.json')
         self.min_uptime = min_uptime
-        self.update_delta = update_delta
+        self.uptime_precision = uptime_precision
         self.requires_online = requires_online
         self.check_delta = self._get_check_delta()
         self.data = self._load()
@@ -145,7 +145,7 @@ class ServiceTracker:
     def _get_check_delta(self):
         if not self.min_uptime:
             return None
-        return self.min_uptime + self.update_delta
+        return self.min_uptime + self.uptime_precision
 
     def _load(self):
         if not os.path.exists(self.file):
@@ -168,9 +168,9 @@ class ServiceTracker:
         now = time.time()
         tds = [int(t - now) for t, o in self.data
             if t > now - self.check_delta and (o or not self.requires_online)]
-        val = set([int((r + self.check_delta) // self.update_delta)
+        val = set([int((r + self.check_delta) // self.uptime_precision)
             for r in tds])
-        expected = set(range(0, self.check_delta // self.update_delta))
+        expected = set(range(0, self.check_delta // self.uptime_precision))
         res = val >= expected
         if not res:
             logger.info(f'uptime is less than {self.min_uptime} seconds')
