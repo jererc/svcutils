@@ -138,8 +138,8 @@ class ServiceTracker:
                  requires_online=False):
         self.file = os.path.join(work_path, 'tracker.json')
         self.min_uptime = min_uptime
-        self.uptime_precision = int(ceil(update_delta * 1.5))
         self.requires_online = requires_online
+        self.uptime_precision = int(ceil(update_delta * 1.5))
         self.check_delta = self._get_check_delta()
         self.data = self._load()
 
@@ -169,10 +169,11 @@ class ServiceTracker:
         now = time.time()
         tds = [int(t - now) for t, o in self.data
             if t > now - self.check_delta and (o or not self.requires_online)]
-        val = set([int((r + self.check_delta) // self.uptime_precision)
-            for r in tds])
-        expected = set(range(0, self.check_delta // self.uptime_precision))
-        res = val >= expected
+        values = {int((r + self.check_delta) // self.uptime_precision)
+            for r in tds}
+        expected = set(range(0, int(ceil(self.check_delta
+            / self.uptime_precision))))
+        res = values >= expected
         if not res:
             logger.info(f'uptime is less than {self.min_uptime} seconds')
         return res

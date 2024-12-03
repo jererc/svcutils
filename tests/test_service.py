@@ -107,51 +107,37 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
         now = time.time()
         st.data = [
-            [now - 241, 1],
             [now - 121, 1],
             [now, 1],
         ]
         self.assertTrue(st.check())
 
     def test_check(self):
-        st = module.ServiceTracker(self.work_path, min_uptime=40,
-            requires_online=False, update_delta=10)
+        st = module.ServiceTracker(self.work_path, min_uptime=300,
+            requires_online=False, update_delta=120)
 
         now = time.time()
         st.data = [
-            [now - 39, 1],
-            [now - 29, 1],
-            [now - 19, 1],
-            [now - 10, 1],
+            [now - 241, 1],
+            [now - 121, 1],
             [now, 1],
         ]
         self.assertFalse(st.check())
 
         now = time.time()
         st.data = [
-            [now - 40, 1],
-            [now - 30, 1],
-            [now - 20, 1],
-            [now - 10, 1],
+            [now - 361, 1],
+            [now - 61, 1],
             [now, 1],
         ]
         self.assertFalse(st.check())
 
         now = time.time()
         st.data = [
-            [now - 41, 1],
-            [now - 31, 1],
-            [now - 1, 1],
-        ]
-        self.assertFalse(st.check())
-
-        now = time.time()
-        st.data = [
-            [now - 41, 1],
-            [now - 31, 1],
-            [now - 21, 1],
-            [now - 11, 1],
-            [now - 1, 1],
+            [now - 361, 1],
+            [now - 241, 1],
+            [now - 121, 1],
+            [now, 1],
         ]
         self.assertTrue(st.check())
 
