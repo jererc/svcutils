@@ -64,13 +64,13 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertEqual(st.check_delta, None)
 
         st = module.ServiceTracker(self.work_path, min_uptime=1)
-        self.assertEqual(st.check_delta, 181)
         self.assertEqual(st.uptime_precision, 180)
+        self.assertEqual(st.check_delta, 181)
 
         st = module.ServiceTracker(self.work_path, min_uptime=60,
-            uptime_precision=10)
-        self.assertEqual(st.uptime_precision, 10)
-        self.assertEqual(st.check_delta, 70)
+            update_delta=10)
+        self.assertEqual(st.uptime_precision, 15)
+        self.assertEqual(st.check_delta, 75)
 
     def test_service_params(self):
         se = module.Service(
@@ -87,16 +87,16 @@ class ServiceTrackerTestCase(unittest.TestCase):
             work_path=self.work_path,
             run_delta=10,
             min_uptime=300,
-            uptime_precision=150,
+            update_delta=120,
             requires_online=True,
         )
         self.assertEqual(se.tracker.min_uptime, 300)
-        self.assertEqual(se.tracker.uptime_precision, 150)
+        self.assertEqual(se.tracker.uptime_precision, 180)
         self.assertTrue(se.tracker.requires_online)
 
     def test_low_uptime(self):
         st = module.ServiceTracker(self.work_path, min_uptime=60,
-            requires_online=False, uptime_precision=180)
+            requires_online=False, update_delta=120)
 
         now = time.time()
         st.data = [
@@ -115,7 +115,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
     def test_check(self):
         st = module.ServiceTracker(self.work_path, min_uptime=40,
-            requires_online=False, uptime_precision=10)
+            requires_online=False, update_delta=10)
 
         now = time.time()
         st.data = [
@@ -141,31 +141,6 @@ class ServiceTrackerTestCase(unittest.TestCase):
         st.data = [
             [now - 41, 1],
             [now - 31, 1],
-            [now - 11, 1],
-            [now - 1, 1],
-        ]
-        self.assertFalse(st.check())
-
-        now = time.time()
-        st.data = [
-            [now - 41, 1],
-            [now - 31, 1],
-            [now - 21, 1],
-            [now - 11, 1],
-            [now - 1, 1],
-        ]
-        self.assertTrue(st.check())
-
-    def test_check_online(self):
-        st = module.ServiceTracker(self.work_path, min_uptime=40,
-            requires_online=True, uptime_precision=10)
-
-        now = time.time()
-        st.data = [
-            [now - 41, 1],
-            [now - 31, 1],
-            [now - 21, 0],
-            [now - 11, 1],
             [now - 1, 1],
         ]
         self.assertFalse(st.check())

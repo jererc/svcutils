@@ -4,6 +4,7 @@ import importlib.util
 import json
 import logging
 from logging.handlers import RotatingFileHandler
+from math import ceil
 import os
 import signal
 import socket
@@ -133,11 +134,11 @@ class RunFile:
 
 
 class ServiceTracker:
-    def __init__(self, work_path, min_uptime=None, uptime_precision=180,
+    def __init__(self, work_path, min_uptime=None, update_delta=120,
                  requires_online=False):
         self.file = os.path.join(work_path, 'tracker.json')
         self.min_uptime = min_uptime
-        self.uptime_precision = uptime_precision
+        self.uptime_precision = int(ceil(update_delta * 1.5))
         self.requires_online = requires_online
         self.check_delta = self._get_check_delta()
         self.data = self._load()
