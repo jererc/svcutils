@@ -9,6 +9,11 @@ VENV_PY_PATH = {'nt': 'python.exe', 'posix': 'python'}[os.name]
 VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
 
 
+def makedirs(x):
+    if not os.path.exists(x):
+        os.makedirs(x)
+
+
 class Bootstrapper:
     def __init__(self, name, cmd_args=None, install_requires=None,
                  force_reinstall=False, venv_dirname='venv', extra_cmds=None,
@@ -27,10 +32,11 @@ class Bootstrapper:
         self.pip_path = os.path.join(self.venv_bin_dir, VENV_PIP_PATH)
         self.py_path = os.path.join(self.venv_bin_dir, VENV_PY_PATH)
         self.svc_py_path = os.path.join(self.venv_bin_dir, VENV_SVC_PY_PATH)
+        self.script_dir = os.path.join(os.path.expanduser('~'),
+            f'.{self.name}')
 
     def setup_venv(self):
-        if not os.path.exists(self.root_venv_dir):
-            os.makedirs(self.root_venv_dir)
+        makedirs(self.root_venv_dir)
         if not os.path.exists(self.svc_py_path):
             if os.name == 'nt':   # requires python3-virtualenv on linux
                 subprocess.check_call(['pip', 'install', 'virtualenv'])
@@ -103,7 +109,7 @@ class Bootstrapper:
         print(f'created the task {task_name}')
 
     def _create_bash_script(self, cmd):
-        file = os.path.join(os.getcwd(), f'{self.name}.sh')
+        file = os.path.join(self.script_dir, f'{self.name}.sh')
         with open(file, 'w') as fd:
             fd.write(f"""#!/bin/bash
 {cmd}
@@ -111,7 +117,7 @@ class Bootstrapper:
         return file
 
     def _create_bat_script(self, cmd):
-        file = os.path.join(os.getcwd(), f'{self.name}.bat')
+        file = os.path.join(self.script_dir, f'{self.name}.bat')
         with open(file, 'w') as fd:
             fd.write(f"""@echo off
 {cmd}
@@ -119,7 +125,7 @@ class Bootstrapper:
         return file
 
     def _create_vbs_script(self, cmd):
-        file = os.path.join(os.getcwd(), f'{self.name}.vbs')
+        file = os.path.join(self.script_dir, f'{self.name}.vbs')
         with open(file, 'w') as fd:
             fd.write(f"""Set WshShell = CreateObject("WScript.Shell")
 WshShell.Run "{cmd}", 0, True
@@ -130,21 +136,12 @@ WshShell.Run "{cmd}", 0, True
         self.setup_venv()
         cmd = self._get_cmd()
         print(f'cmd: {cmd}')
+        makedirs(self.script_dir)
         if os.name == 'nt':
             file = self._create_bat_script(cmd=cmd)
         else:
             file = self._create_bash_script(cmd=cmd)
         print(f'created script {file}')
-
-    def setup_task(self):
-        self.setup_venv()
-        cmd = self._get_cmd()
-        print(f'cmd: {cmd}')
-        print(f'schedule recurrence: {self.schedule_minutes} minutes')
-        if os.name == 'nt':
-            self._setup_windows_task(cmd=cmd, task_name=self.name)
-        else:
-            self._setup_linux_task(cmd=cmd)
 
     # def setup_task(self):
     #     self.setup_venv()
@@ -152,8 +149,19 @@ WshShell.Run "{cmd}", 0, True
     #     print(f'cmd: {cmd}')
     #     print(f'schedule recurrence: {self.schedule_minutes} minutes')
     #     if os.name == 'nt':
-    #         script_file = self._create_vbs_script(cmd=cmd)
-    #         self._setup_windows_task(cmd=script_file, task_name=self.name)
+    #         self._setup_windows_task(cmd=cmd, task_name=self.name)
     #     else:
-    #         script_file = self._create_bash_script(cmd=cmd)
-    #         self._setup_linux_task(cmd=f'bash {script_file}')
+    #         self._setup_linux_task(cmd=cmd)
+
+    def setup_task(self):
+        self.setup_venv()
+        cmd = self._get_cmd()
+        print(f'cmd: {cmd}')
+        print(f'schedule recurrence: {self.schedule_minutes} minutes')
+        makedirs(self.script_dir)
+        if os.name == 'nt':
+            script_file = self._create_vbs_script(cmd=cmd)
+            self._setup_windows_task(cmd=script_file, task_name=self.name)
+        else:
+            script_file = self._create_bash_script(cmd=cmd)
+            self._setup_linux_task(cmd=f'bash {script_file}')
