@@ -12,7 +12,7 @@ import psutil
 from svcutils import service as module
 
 
-WORK_PATH = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
+WORK_DIR = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
 
 module.logger.setLevel(logging.DEBUG)
 
@@ -33,8 +33,8 @@ class ConfigTestCase(unittest.TestCase):
     def test_1(self):
         self.assertRaises(Exception, module.Config, 'invalid')
 
-        makedirs(WORK_PATH)
-        config_file = os.path.join(WORK_PATH, 'config.py')
+        makedirs(WORK_DIR)
+        config_file = os.path.join(WORK_DIR, 'config.py')
         with open(config_file, 'w') as fd:
             fd.write("""invalid""")
         self.assertRaises(Exception, module.Config, config_file)
@@ -53,21 +53,21 @@ class ConfigTestCase(unittest.TestCase):
 class ServiceTrackerTestCase(unittest.TestCase):
     def setUp(self):
         self.target = int
-        self.work_path = WORK_PATH
-        makedirs(WORK_PATH)
+        self.work_dir = WORK_DIR
+        makedirs(WORK_DIR)
 
     def test_params(self):
-        st = module.ServiceTracker(self.work_path)
+        st = module.ServiceTracker(self.work_dir)
         self.assertEqual(st.check_delta, None)
 
-        st = module.ServiceTracker(self.work_path, min_uptime=0)
+        st = module.ServiceTracker(self.work_dir, min_uptime=0)
         self.assertEqual(st.check_delta, None)
 
-        st = module.ServiceTracker(self.work_path, min_uptime=1)
+        st = module.ServiceTracker(self.work_dir, min_uptime=1)
         self.assertEqual(st.uptime_precision, 180)
         self.assertEqual(st.check_delta, 181)
 
-        st = module.ServiceTracker(self.work_path, min_uptime=60,
+        st = module.ServiceTracker(self.work_dir, min_uptime=60,
             update_delta=10)
         self.assertEqual(st.uptime_precision, 15)
         self.assertEqual(st.check_delta, 75)
@@ -75,7 +75,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
     def test_service_params(self):
         se = module.Service(
             target=self.target,
-            work_path=self.work_path,
+            work_dir=self.work_dir,
             run_delta=10,
         )
         self.assertEqual(se.tracker.min_uptime, None)
@@ -84,7 +84,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
         se = module.Service(
             target=self.target,
-            work_path=self.work_path,
+            work_dir=self.work_dir,
             run_delta=10,
             min_uptime=300,
             update_delta=120,
@@ -95,7 +95,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertTrue(se.tracker.requires_online)
 
     def test_low_uptime(self):
-        st = module.ServiceTracker(self.work_path, min_uptime=60,
+        st = module.ServiceTracker(self.work_dir, min_uptime=60,
             requires_online=False, update_delta=120)
 
         now = time.time()
@@ -113,7 +113,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertTrue(st.check())
 
     def test_check(self):
-        st = module.ServiceTracker(self.work_path, min_uptime=300,
+        st = module.ServiceTracker(self.work_dir, min_uptime=300,
             requires_online=False, update_delta=120)
 
         now = time.time()
@@ -145,7 +145,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
 class MustRunTestCase(unittest.TestCase):
     def setUp(self):
         self.target = int
-        self.work_path = WORK_PATH
+        self.work_dir = WORK_DIR
 
     def test_run(self):
         with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
@@ -154,7 +154,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_cpu_percent.return_value = 1
             self.assertFalse(module.Service(
                 target=self.target,
-                work_path=self.work_path,
+                work_dir=self.work_dir,
                 run_delta=10,
             )._must_run())
 
@@ -164,7 +164,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_cpu_percent.return_value = 1
             self.assertTrue(module.Service(
                 target=self.target,
-                work_path=self.work_path,
+                work_dir=self.work_dir,
                 run_delta=10,
             )._must_run())
 
@@ -175,7 +175,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_cpu_percent.return_value = 20
             self.assertFalse(module.Service(
                 target=self.target,
-                work_path=self.work_path,
+                work_dir=self.work_dir,
                 run_delta=10,
                 force_run_delta=20,
                 max_cpu_percent=10,
@@ -187,7 +187,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_cpu_percent.return_value = 1
             self.assertTrue(module.Service(
                 target=self.target,
-                work_path=self.work_path,
+                work_dir=self.work_dir,
                 run_delta=10,
                 force_run_delta=20,
                 max_cpu_percent=10,
@@ -200,7 +200,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_cpu_percent.return_value = 20
             self.assertFalse(module.Service(
                 target=self.target,
-                work_path=self.work_path,
+                work_dir=self.work_dir,
                 run_delta=10,
                 force_run_delta=20,
                 max_cpu_percent=10,
@@ -212,7 +212,7 @@ class MustRunTestCase(unittest.TestCase):
             mock_cpu_percent.return_value = 20
             self.assertTrue(module.Service(
                 target=self.target,
-                work_path=self.work_path,
+                work_dir=self.work_dir,
                 run_delta=10,
                 force_run_delta=20,
                 max_cpu_percent=10,
@@ -221,8 +221,8 @@ class MustRunTestCase(unittest.TestCase):
 
 class TargetTestCase(unittest.TestCase):
     def setUp(self):
-        remove_path(WORK_PATH)
-        makedirs(WORK_PATH)
+        remove_path(WORK_DIR)
+        makedirs(WORK_DIR)
 
     def test_run_once(self):
         self.res = False
@@ -235,7 +235,7 @@ class TargetTestCase(unittest.TestCase):
             target=target,
             args=(1, 2),
             kwargs={'p3': 3},
-            work_path=WORK_PATH,
+            work_dir=WORK_DIR,
             run_delta=1,
         )
         svc.run_once()
@@ -244,8 +244,8 @@ class TargetTestCase(unittest.TestCase):
 
 class ServiceTestCase(unittest.TestCase):
     def setUp(self):
-        remove_path(WORK_PATH)
-        makedirs(WORK_PATH)
+        remove_path(WORK_DIR)
+        makedirs(WORK_DIR)
 
     def test_run_once(self):
         self.attempts = 0
@@ -256,7 +256,7 @@ class ServiceTestCase(unittest.TestCase):
 
         svc = module.Service(
             target=target,
-            work_path=WORK_PATH,
+            work_dir=WORK_DIR,
             run_delta=1,
         )
         end_ts = time.time() + 3
@@ -271,7 +271,7 @@ class ServiceTestCase(unittest.TestCase):
         self.assertTrue(self.runs <= 4)
 
     def test_run_exc(self):
-        self.result_path = os.path.join(WORK_PATH, '_test_result')
+        self.result_path = os.path.join(WORK_DIR, '_test_result')
 
         def target():
             with open(self.result_path, 'a') as fd:
@@ -283,7 +283,7 @@ class ServiceTestCase(unittest.TestCase):
                 mock_cpu_percent.return_value = 1
                 svc = module.Service(
                     target=target,
-                    work_path=WORK_PATH,
+                    work_dir=WORK_DIR,
                     run_delta=1,
                     daemon_loop_delta=.2,
                 )
@@ -300,7 +300,7 @@ class ServiceTestCase(unittest.TestCase):
         self.assertEqual(lines, ['call'] * 3)
 
     def test_run(self):
-        self.result_path = os.path.join(WORK_PATH, '_test_result')
+        self.result_path = os.path.join(WORK_DIR, '_test_result')
 
         def target():
             with open(self.result_path, 'a') as fd:
@@ -311,7 +311,7 @@ class ServiceTestCase(unittest.TestCase):
                 mock_cpu_percent.return_value = 1
                 svc = module.Service(
                     target=target,
-                    work_path=WORK_PATH,
+                    work_dir=WORK_DIR,
                     run_delta=1,
                     daemon_loop_delta=.2,
                 )
@@ -330,8 +330,8 @@ class ServiceTestCase(unittest.TestCase):
 
 class RuntimeTestCase(unittest.TestCase):
     def setUp(self):
-        remove_path(WORK_PATH)
-        makedirs(WORK_PATH)
+        remove_path(WORK_DIR)
+        makedirs(WORK_DIR)
 
     def test_offline(self):
         self.runs = 0
@@ -341,7 +341,7 @@ class RuntimeTestCase(unittest.TestCase):
 
         svc = module.Service(
             target=target,
-            work_path=WORK_PATH,
+            work_dir=WORK_DIR,
             run_delta=1,
             min_uptime=5,
             requires_online=True,
@@ -364,7 +364,7 @@ class RuntimeTestCase(unittest.TestCase):
 
         svc = module.Service(
             target=target,
-            work_path=WORK_PATH,
+            work_dir=WORK_DIR,
             run_delta=1,
             min_uptime=5,
             requires_online=True,

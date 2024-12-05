@@ -7,7 +7,7 @@ from unittest.mock import patch
 from svcutils import bootstrap as module
 
 
-WORK_PATH = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
+WORK_DIR = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
 
 
 def remove_path(path):
@@ -46,8 +46,8 @@ class CrontabTestCase(unittest.TestCase):
 
 class BootstrapperTestCase(unittest.TestCase):
     def setUp(self):
-        remove_path(WORK_PATH)
-        makedirs(WORK_PATH)
+        remove_path(WORK_DIR)
+        makedirs(WORK_DIR)
         self.args = {
             'name': 'name',
             'cmd_args': ['module.main', 'arg', '--flag'],
@@ -90,10 +90,10 @@ class BootstrapperTestCase(unittest.TestCase):
     def test_file(self):
         with patch.object(self.bs, 'setup_venv'), \
                 patch('builtins.input', return_value=''), \
-                patch('os.getcwd', return_value=WORK_PATH):
+                patch('os.getcwd', return_value=WORK_DIR):
             self.bs.setup_script()
-            print(os.listdir(WORK_PATH))
-            files = glob(os.path.join(WORK_PATH, '*'))
+            print(os.listdir(WORK_DIR))
+            files = glob(os.path.join(WORK_DIR, '*'))
             self.assertTrue(files)
             with open(files[0]) as fd:
                 lines = fd.read().splitlines()

@@ -134,9 +134,9 @@ class RunFile:
 
 
 class ServiceTracker:
-    def __init__(self, work_path, min_uptime=None, update_delta=120,
+    def __init__(self, work_dir, min_uptime=None, update_delta=120,
                  requires_online=False):
-        self.file = os.path.join(work_path, '.svc-tracker.json')
+        self.file = os.path.join(work_dir, '.svc-tracker.json')
         self.min_uptime = min_uptime
         self.requires_online = requires_online
         self.uptime_precision = int(ceil(update_delta * 1.5))
@@ -180,19 +180,19 @@ class ServiceTracker:
 
 
 class Service:
-    def __init__(self, target, work_path, args=None, kwargs=None,
+    def __init__(self, target, work_dir, args=None, kwargs=None,
                  run_delta=60, force_run_delta=None, max_cpu_percent=None,
                  daemon_loop_delta=60, **tracker_args):
         self.target = target
         self.args = args or ()
         self.kwargs = kwargs or {}
-        self.work_path = work_path
+        self.work_dir = work_dir
         self.run_delta = run_delta
         self.force_run_delta = force_run_delta or run_delta * 2
         self.max_cpu_percent = max_cpu_percent
         self.daemon_loop_delta = daemon_loop_delta
-        self.tracker = ServiceTracker(work_path, **tracker_args)
-        self.run_file = RunFile(os.path.join(work_path, '.svc.run'))
+        self.tracker = ServiceTracker(work_dir, **tracker_args)
+        self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
 
     def _check_cpu_usage(self):
         if not self.max_cpu_percent:
@@ -226,14 +226,14 @@ class Service:
             logger.exception('service failed')
 
     def run_once(self):
-        @with_lockfile(self.work_path)
+        @with_lockfile(self.work_dir)
         def run():
             self._attempt_run()
 
         run()
 
     def run(self):
-        @with_lockfile(self.work_path)
+        @with_lockfile(self.work_dir)
         def run():
             while True:
                 self._attempt_run()
