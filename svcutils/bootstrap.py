@@ -105,7 +105,10 @@ class Bootstrapper:
     def _setup_windows_script(self, cmd):
         file = os.path.join(os.getcwd(), f'{self.name}.bat')
         with open(file, 'w') as fd:
-            fd.write(f"""@echo off\r\n{cmd}\r\n""")
+            # fd.write(f"""@echo off\r\n{cmd}\r\n""")
+            fd,write(f"""Set WshShell = CreateObject("WScript.Shell")
+WshShell.Run "cmd.exe /c {cmd}", 0, True
+""")
         return file
 
     def _setup_linux_script(self, cmd):
