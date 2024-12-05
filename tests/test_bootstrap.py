@@ -86,16 +86,13 @@ class BootstrapperTestCase(unittest.TestCase):
                 cmd = mock__setup_linux_task.call_args_list[0].kwargs['cmd']
             cmd = cmd.split(' ')
             print(cmd)
-            with open(cmd[-1]) as fd:
-                lines = fd.read().splitlines()
-            cmd = lines[1].split(' ')
-            print(cmd)
             self.assertEqual(cmd[1:], ['-m'] + self.args['cmd_args'])
 
     def test_file(self):
-        with patch.object(self.bs, 'setup_venv'):
+        with patch.object(self.bs, 'setup_venv'), \
+                patch('os.getcwd', return_value=WORK_DIR):
             self.bs.setup_script()
-            files = glob(os.path.join(WORK_DIR, f'.{self.bs.name}', '*'))
+            files = glob(os.path.join(WORK_DIR, '*'))
             self.assertTrue(files)
             with open(files[0]) as fd:
                 lines = fd.read().splitlines()
