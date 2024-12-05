@@ -105,34 +105,38 @@ class Bootstrapper:
     def _setup_windows_script(self, cmd):
         file = os.path.join(os.getcwd(), f'{self.name}.bat')
         with open(file, 'w') as fd:
-            fd.write(f"""@echo off
-{cmd}
-""")
-        print(f'created the script {file}')
+            fd.write(f"""@echo off\r\n{cmd}\r\n""")
+        return file
 
     def _setup_linux_script(self, cmd):
         file = os.path.join(os.getcwd(), f'{self.name}.sh')
         with open(file, 'w') as fd:
-            fd.write(f"""#!/bin/bash
-{cmd}
-""")
-        print(f'created the script {file}')
-
-    def setup_task(self):
-        cmd = self._get_cmd()
-        print(f'cmd: {cmd}')
-        print(f'schedule recurrence: {self.schedule_minutes} minutes')
-        self.setup_venv()
-        if os.name == 'nt':
-            self._setup_windows_task(cmd=cmd, task_name=self.name)
-        else:
-            self._setup_linux_task(cmd=cmd)
+            fd.write(f"""#!/bin/bash\n{cmd}\n""")
+        return file
 
     def setup_script(self):
         cmd = self._get_cmd()
         print(f'cmd: {cmd}')
         self.setup_venv()
         if os.name == 'nt':
-            self._setup_windows_script(cmd=cmd)
+            file = self._setup_windows_script(cmd=cmd)
         else:
-            self._setup_linux_script(cmd=cmd)
+            file = self._setup_linux_script(cmd=cmd)
+        return file
+
+    # def setup_task(self):
+    #     cmd = self._get_cmd()
+    #     print(f'cmd: {cmd}')
+    #     print(f'schedule recurrence: {self.schedule_minutes} minutes')
+    #     self.setup_venv()
+    #     if os.name == 'nt':
+    #         self._setup_windows_task(cmd=cmd, task_name=self.name)
+    #     else:
+    #         self._setup_linux_task(cmd=cmd)
+
+    def setup_task(self):
+        script_file = self.setup_script()
+        if os.name == 'nt':
+            self._setup_windows_task(cmd=[script_file], task_name=self.name)
+        else:
+            self._setup_linux_task(cmd=['bash', script_file])

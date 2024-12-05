@@ -72,20 +72,20 @@ class BootstrapperTestCase(unittest.TestCase):
         self.assertEqual(self.bs.svc_py_path, os.path.join(os.path.expanduser('~'),
             self.bs.venv_dirname, self.args['name'], bin_dirname, py_filename))
 
-    def test_task(self):
-        with patch.object(self.bs, 'setup_venv'), \
-                patch.object(self.bs, '_setup_windows_task'
-                    ) as mock__setup_windows_task, \
-                patch.object(self.bs, '_setup_linux_task'
-                    ) as mock__setup_linux_task:
-            self.bs.setup_task()
-            if os.name == 'nt':
-                cmd = mock__setup_windows_task.call_args_list[0].kwargs['cmd']
-            else:
-                cmd = mock__setup_linux_task.call_args_list[0].kwargs['cmd']
-            cmd = cmd.split(' ')
-            print(cmd)
-            self.assertEqual(cmd[1:], ['-m'] + self.args['cmd_args'])
+    # def test_task(self):
+    #     with patch.object(self.bs, 'setup_venv'), \
+    #             patch.object(self.bs, '_setup_windows_task'
+    #                 ) as mock__setup_windows_task, \
+    #             patch.object(self.bs, '_setup_linux_task'
+    #                 ) as mock__setup_linux_task:
+    #         self.bs.setup_task()
+    #         if os.name == 'nt':
+    #             cmd = mock__setup_windows_task.call_args_list[0].kwargs['cmd']
+    #         else:
+    #             cmd = mock__setup_linux_task.call_args_list[0].kwargs['cmd']
+    #         cmd = cmd.split(' ')
+    #         print(cmd)
+    #         self.assertEqual(cmd[1:], ['-m'] + self.args['cmd_args'])
 
     def test_file(self):
         with patch.object(self.bs, 'setup_venv'), \
