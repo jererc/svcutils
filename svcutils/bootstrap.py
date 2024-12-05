@@ -137,6 +137,9 @@ class Bootstrapper:
     def setup_task(self):
         script_file = self.setup_script()
         if os.name == 'nt':
-            self._setup_windows_task(cmd=script_file, task_name=self.name)
+            self._setup_windows_task(
+                cmd=f'cmd.exe /c start "" /b {script_file}',
+                task_name=self.name,
+            )
         else:
             self._setup_linux_task(cmd=f'bash {script_file}')
