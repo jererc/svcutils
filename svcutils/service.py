@@ -60,7 +60,7 @@ def get_file_mtime(x):
 
 
 def with_lockfile(path):
-    lockfile_path = os.path.join(path, 'lock')
+    lockfile_path = os.path.join(path, '.svc.lock')
 
     def decorator(func):
         @functools.wraps(func)
@@ -136,7 +136,7 @@ class RunFile:
 class ServiceTracker:
     def __init__(self, work_path, min_uptime=None, update_delta=120,
                  requires_online=False):
-        self.file = os.path.join(work_path, 'tracker.json')
+        self.file = os.path.join(work_path, '.svc-tracker.json')
         self.min_uptime = min_uptime
         self.requires_online = requires_online
         self.uptime_precision = int(ceil(update_delta * 1.5))
@@ -192,7 +192,7 @@ class Service:
         self.max_cpu_percent = max_cpu_percent
         self.daemon_loop_delta = daemon_loop_delta
         self.tracker = ServiceTracker(work_path, **tracker_args)
-        self.run_file = RunFile(os.path.join(work_path, 'service.run'))
+        self.run_file = RunFile(os.path.join(work_path, '.svc.run'))
 
     def _check_cpu_usage(self):
         if not self.max_cpu_percent:
