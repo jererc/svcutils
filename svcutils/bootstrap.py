@@ -136,24 +136,24 @@ WshShell.Run "{cmd}", 0, True
             file = self._create_bash_script(cmd=cmd)
         print(f'created script {file}')
 
-    # def setup_task(self):
-    #     cmd = self._get_cmd()
-    #     print(f'cmd: {cmd}')
-    #     print(f'schedule recurrence: {self.schedule_minutes} minutes')
-    #     self.setup_venv()
-    #     if os.name == 'nt':
-    #         self._setup_windows_task(cmd=cmd, task_name=self.name)
-    #     else:
-    #         self._setup_linux_task(cmd=cmd)
-
     def setup_task(self):
         self.setup_venv()
         cmd = self._get_cmd()
         print(f'cmd: {cmd}')
         print(f'schedule recurrence: {self.schedule_minutes} minutes')
         if os.name == 'nt':
-            script_file = self._create_vbs_script(cmd=cmd)
-            self._setup_windows_task(cmd=script_file, task_name=self.name)
+            self._setup_windows_task(cmd=cmd, task_name=self.name)
         else:
-            script_file = self._create_bash_script(cmd=cmd)
-            self._setup_linux_task(cmd=f'bash {script_file}')
+            self._setup_linux_task(cmd=cmd)
+
+    # def setup_task(self):
+    #     self.setup_venv()
+    #     cmd = self._get_cmd()
+    #     print(f'cmd: {cmd}')
+    #     print(f'schedule recurrence: {self.schedule_minutes} minutes')
+    #     if os.name == 'nt':
+    #         script_file = self._create_vbs_script(cmd=cmd)
+    #         self._setup_windows_task(cmd=script_file, task_name=self.name)
+    #     else:
+    #         script_file = self._create_bash_script(cmd=cmd)
+    #         self._setup_linux_task(cmd=f'bash {script_file}')
