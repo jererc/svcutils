@@ -62,15 +62,15 @@ class BootstrapperTestCase(unittest.TestCase):
         self.assertEqual(bs._get_cmd().split(' ')[1:], ['-m', 'module.main'])
 
     def test_attrs(self):
-        self.assertEqual(self.bs.venv_path, os.path.join(os.path.expanduser('~'),
-            self.bs.venv_dir, self.args['name']))
+        self.assertEqual(self.bs.venv_dir, os.path.join(os.path.expanduser('~'),
+            self.bs.venv_dirname, self.args['name']))
         bin_dirname = 'Scripts' if os.name == 'nt' else 'bin'
         pip_filename = 'pip.exe' if os.name == 'nt' else 'pip'
         py_filename = 'pythonw.exe' if os.name == 'nt' else 'python'
         self.assertEqual(self.bs.pip_path, os.path.join(os.path.expanduser('~'),
-            self.bs.venv_dir, self.args['name'], bin_dirname, pip_filename))
+            self.bs.venv_dirname, self.args['name'], bin_dirname, pip_filename))
         self.assertEqual(self.bs.svc_py_path, os.path.join(os.path.expanduser('~'),
-            self.bs.venv_dir, self.args['name'], bin_dirname, py_filename))
+            self.bs.venv_dirname, self.args['name'], bin_dirname, py_filename))
 
     def test_task(self):
         with patch.object(self.bs, 'setup_venv'), \
