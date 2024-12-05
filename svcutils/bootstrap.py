@@ -9,9 +9,9 @@ VENV_PY_PATH = {'nt': 'python.exe', 'posix': 'python'}[os.name]
 VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
 
 
-def makedirs(x):
-    if not os.path.exists(x):
-        os.makedirs(x)
+def makedirs(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
 class Bootstrapper:
