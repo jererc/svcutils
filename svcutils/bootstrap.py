@@ -69,7 +69,7 @@ class Bootstrapper:
             case _:
                 return '0 0 * * *'
 
-    def _setup_linux_task(self, cmd):
+    def _setup_linux_crontab(self, cmd):
         res = subprocess.run(['crontab', '-l'],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         current_crontab = res.stdout if res.returncode == 0 else ''
@@ -77,7 +77,7 @@ class Bootstrapper:
         updated_crontab = ''
         job_found = False
         for line in current_crontab.splitlines():
-            if cmd in line:
+            if self.svc_py_path in line:
                 updated_crontab += new_job
                 job_found = True
             else:
@@ -166,4 +166,4 @@ objShortcut.Save
         if os.name == 'nt':
             self._setup_windows_task(cmd=cmd, task_name=self.name)
         else:
-            self._setup_linux_task(cmd=cmd)
+            self._setup_linux_crontab(cmd=cmd)
