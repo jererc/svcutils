@@ -1,6 +1,7 @@
 import ctypes
 import os
 import subprocess
+import tempfile
 
 
 VENV_BIN_DIRNAME = {'nt': 'Scripts', 'posix': 'bin'}[os.name]
@@ -52,7 +53,7 @@ class Bootstrapper:
     def _get_cmd(self):
         if not self.cmd_args:
             raise SystemExit('missing cmd_args')
-        return ' '.join([self.svc_py_path, '-m'] + self.cmd_args)
+        return [self.svc_py_path, '-m'] + self.cmd_args
 
     def _generate_crontab_schedule(self):
         match self.schedule_minutes:
@@ -120,21 +121,45 @@ class Bootstrapper:
 """)
         return file
 
+    def _create_shortcut(self, target_path, shortcut_path, arguments='',
+            working_dir='', description=''):
+        if not working_dir:
+            working_dir = os.path.dirname(target_path)
+        vbs_content = f"""Set objShell = WScript.CreateObject("WScript.Shell")
+    Set objShortcut = objShell.CreateShortcut("{shortcut_path}")
+    objShortcut.TargetPath = "{target_path}"
+    objShortcut.Arguments = "{arguments}"
+    objShortcut.WorkingDirectory = "{working_dir}"
+    objShortcut.Description = "{description}"
+    objShortcut.Save
+    """
+        with tempfile.NamedTemporaryFile('w', delete=False, suffix='.vbs'
+                ) as temp_file:
+            temp_file.write(vbs_content)
+            temp_vbs_path = temp_file.name
+        try:
+            os.system(f'cscript //NoLogo "{temp_vbs_path}"')
+        finally:
+            os.remove(temp_vbs_path)
+
     def setup_script(self):
         self.setup_venv()
         cmd = self._get_cmd()
-        print(f'cmd: {cmd}')
         if os.name == 'nt':
-            file = self._create_bat_script(cmd=cmd)
+            self._create_shortcut(target_path=cmd[0],
+                shortcut_path=os.path.join(os.path.expanduser('~'),
+                    'Desktop', f'{self.name}.lnk'),
+                arguments=' '.join(cmd[1:]),
+                working_dir=os.getcwd(),
+                description=self.name,
+            )
         else:
-            file = self._create_sh_script(cmd=cmd)
+            file = self._create_sh_script(cmd=' '.join(cmd))
         print(f'created script {file}')
 
     def setup_task(self):
         self.setup_venv()
-        cmd = self._get_cmd()
-        print(f'cmd: {cmd}')
-        print(f'schedule recurrence: {self.schedule_minutes} minutes')
+        cmd = ' '.join(self._get_cmd())
         if os.name == 'nt':
             self._setup_windows_task(cmd=cmd, task_name=self.name)
         else:

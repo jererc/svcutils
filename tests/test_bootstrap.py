@@ -60,7 +60,7 @@ class BootstrapperTestCase(unittest.TestCase):
         self.assertRaises(SystemExit, bs._get_cmd)
 
         bs = module.Bootstrapper(name='name', cmd_args=['module.main'])
-        self.assertEqual(bs._get_cmd().split(' ')[1:], ['-m', 'module.main'])
+        self.assertEqual(bs._get_cmd()[1:], ['-m', 'module.main'])
 
     def test_attrs(self):
         self.assertEqual(self.bs.venv_dir, os.path.join(WORK_DIR,
