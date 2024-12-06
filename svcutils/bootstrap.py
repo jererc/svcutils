@@ -126,13 +126,13 @@ class Bootstrapper:
         if not working_dir:
             working_dir = os.path.dirname(target_path)
         vbs_content = f"""Set objShell = WScript.CreateObject("WScript.Shell")
-    Set objShortcut = objShell.CreateShortcut("{shortcut_path}")
-    objShortcut.TargetPath = "{target_path}"
-    objShortcut.Arguments = "{arguments}"
-    objShortcut.WorkingDirectory = "{working_dir}"
-    objShortcut.Description = "{description}"
-    objShortcut.Save
-    """
+Set objShortcut = objShell.CreateShortcut("{shortcut_path}")
+objShortcut.TargetPath = "{target_path}"
+objShortcut.Arguments = "{arguments}"
+objShortcut.WorkingDirectory = "{working_dir}"
+objShortcut.Description = "{description}"
+objShortcut.Save
+"""
         with tempfile.NamedTemporaryFile('w', delete=False, suffix='.vbs'
                 ) as temp_file:
             temp_file.write(vbs_content)
@@ -154,9 +154,10 @@ class Bootstrapper:
                 working_dir=os.getcwd(),
                 description=self.name,
             )
+            print(f'created shortcut {file}')
         else:
             file = self._create_sh_script(cmd=' '.join(cmd))
-        print(f'created script {file}')
+            print(f'created script {file}')
 
     def setup_task(self):
         self.setup_venv()
