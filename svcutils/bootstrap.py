@@ -148,8 +148,9 @@ objShortcut.Save
         cmd = self._get_cmd()
         if os.name == 'nt':
             file = self._create_shortcut(target_path=cmd[0],
-                shortcut_path=os.path.join(os.path.expanduser('~'),
-                    'Desktop', f'{self.name}.lnk'),
+                shortcut_path=os.path.join(os.getenv('APPDATA'),
+                    r'Microsoft\Windows\Start Menu\Programs',
+                    f'{self.name}.lnk'),
                 arguments=' '.join(cmd[1:]),
                 working_dir=os.getcwd(),
                 description=self.name,
