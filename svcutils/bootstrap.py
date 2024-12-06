@@ -141,12 +141,13 @@ class Bootstrapper:
             os.system(f'cscript //NoLogo "{temp_vbs_path}"')
         finally:
             os.remove(temp_vbs_path)
+        return shortcut_path
 
     def setup_script(self):
         self.setup_venv()
         cmd = self._get_cmd()
         if os.name == 'nt':
-            self._create_shortcut(target_path=cmd[0],
+            file = self._create_shortcut(target_path=cmd[0],
                 shortcut_path=os.path.join(os.path.expanduser('~'),
                     'Desktop', f'{self.name}.lnk'),
                 arguments=' '.join(cmd[1:]),
