@@ -18,11 +18,6 @@ from svcutils.bootstrap import get_app_dir, get_work_dir
 logger = logging.getLogger(__name__)
 
 
-def makedirs(x):
-    if not os.path.exists(x):
-        os.makedirs(x)
-
-
 def setup_logging(logger, path, name, max_size=1024000):
     logging.basicConfig(level=logging.DEBUG)
     formatter = logging.Formatter(
@@ -32,7 +27,8 @@ def setup_logging(logger, path, name, max_size=1024000):
         stdout_handler.setFormatter(formatter)
         stdout_handler.setLevel(logging.DEBUG)
         logger.addHandler(stdout_handler)
-    makedirs(path)
+    if not os.path.exists(path):
+        os.makedirs(path)
     file_handler = RotatingFileHandler(
         os.path.join(path, f'{name}.log'),
         mode='a', maxBytes=max_size, backupCount=0,

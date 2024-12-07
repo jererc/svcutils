@@ -18,7 +18,10 @@ def get_app_dir(name):
     else:
         root = os.getenv('HOME', os.path.join(os.path.expanduser('~'),
             '.local', 'share'))
-    return os.path.join(root, name)
+    path = os.path.join(root, name)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
 
 
 def get_work_dir(name):
