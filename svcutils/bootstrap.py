@@ -122,6 +122,20 @@ class Bootstrapper:
             '/tn', task_name])
         print(f'created the task {task_name}')
 
+    def _create_linux_shortcut(self, name, cmd, shortcut_path,
+            description=''):
+        makedirs(os.path.dirname(shortcut_path))
+        content = f"""[Desktop Entry]
+Type=Application
+Name={name}
+Exec={cmd}
+Terminal=true
+Comment={description}
+"""
+        with open(shortcut_path, 'w') as fd:
+            fd.write(content)
+        return shortcut_path
+
     def _create_windows_shortcut(self, target_path, shortcut_path,
             arguments='', working_dir='', description=''):
         if not working_dir:
@@ -142,20 +156,6 @@ objShortcut.Save
             os.system(f'cscript //NoLogo "{temp_vbs_path}"')
         finally:
             os.remove(temp_vbs_path)
-        return shortcut_path
-
-    def _create_linux_shortcut(self, name, cmd, shortcut_path,
-            description=''):
-        makedirs(os.path.dirname(shortcut_path))
-        content = f"""[Desktop Entry]
-Type=Application
-Name={name}
-Exec={cmd}
-Terminal=true
-Comment={description}
-"""
-        with open(shortcut_path, 'w') as fd:
-            fd.write(content)
         return shortcut_path
 
     def setup_script(self):
