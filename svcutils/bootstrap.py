@@ -11,6 +11,11 @@ VENV_PY_PATH = {'nt': 'python.exe', 'posix': 'python'}[os.name]
 VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
 
 
+def makedirs(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
 def get_app_dir(name):
     if os.name == 'nt':
         root = os.getenv('APPDATA', os.path.join(os.path.expanduser('~'),
@@ -19,15 +24,13 @@ def get_app_dir(name):
         root = os.getenv('HOME', os.path.join(os.path.expanduser('~'),
             '.local', 'share'))
     path = os.path.join(root, name)
-    if not os.path.exists(path):
-        os.makedirs(path)
+    makedirs(path)
     return path
 
 
 def get_work_dir(name):
     path = os.path.join(os.path.expanduser('~'), f'.{name}')
-    if not os.path.exists(path):
-        os.makedirs(path)
+    makedirs(path)
     return path
 
 
@@ -119,24 +122,8 @@ class Bootstrapper:
             '/tn', task_name])
         print(f'created the task {task_name}')
 
-    def _create_sh_script(self, cmd):
-        file = os.path.join(os.getcwd(), f'{self.name}.sh')
-        with open(file, 'w') as fd:
-            fd.write(f"""#!/bin/bash
-{cmd}
-""")
-        return file
-
-    def _create_bat_script(self, cmd):
-        file = os.path.join(os.getcwd(), f'{self.name}.bat')
-        with open(file, 'w') as fd:
-            fd.write(f"""@echo off
-{cmd}
-""")
-        return file
-
-    def _create_shortcut(self, target_path, shortcut_path, arguments='',
-            working_dir='', description=''):
+    def _create_windows_shortcut(self, target_path, shortcut_path,
+            arguments='', working_dir='', description=''):
         if not working_dir:
             working_dir = os.path.dirname(target_path)
         vbs_content = f"""Set objShell = WScript.CreateObject("WScript.Shell")
@@ -157,11 +144,26 @@ objShortcut.Save
             os.remove(temp_vbs_path)
         return shortcut_path
 
+    def _create_linux_shortcut(self, name, cmd, shortcut_path,
+            description=''):
+        makedirs(os.path.dirname(shortcut_path))
+        content = f"""[Desktop Entry]
+Type=Application
+Name={name}
+Exec={cmd}
+Terminal=true
+Comment={description}
+"""
+        with open(shortcut_path, 'w') as fd:
+            fd.write(content)
+        return shortcut_path
+
     def setup_script(self):
         self.setup_venv()
         cmd = self._get_cmd()
         if os.name == 'nt':
-            file = self._create_shortcut(target_path=cmd[0],
+            file = self._create_windows_shortcut(
+                target_path=cmd[0],
                 shortcut_path=os.path.join(os.getenv('APPDATA'),
                     r'Microsoft\Windows\Start Menu\Programs',
                     f'{self.name}.lnk'),
@@ -169,10 +171,16 @@ objShortcut.Save
                 working_dir=os.getcwd(),
                 description=self.name,
             )
-            print(f'created shortcut {file}')
         else:
-            file = self._create_sh_script(cmd=' '.join(cmd))
-            print(f'created script {file}')
+            file = self._create_linux_shortcut(
+                name=self.name,
+                cmd=' '.join(cmd),
+                shortcut_path=os.path.join(os.path.expanduser('~'),
+                    '.local/share/applications',
+                    f'{self.name}.desktop'),
+                description=self.name,
+            )
+        print(f'created shortcut {file}')
 
     def setup_task(self):
         self.setup_venv()
