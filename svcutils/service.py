@@ -12,6 +12,8 @@ import subprocess
 import sys
 import time
 
+from svcutils.bootstrap import get_app_dir, get_work_dir
+
 
 logger = logging.getLogger(__name__)
 

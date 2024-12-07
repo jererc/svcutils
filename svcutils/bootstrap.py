@@ -4,36 +4,47 @@ import subprocess
 import tempfile
 
 
+VENV_DIRNAME = 'venv'
 VENV_BIN_DIRNAME = {'nt': 'Scripts', 'posix': 'bin'}[os.name]
 VENV_PIP_PATH = {'nt': 'pip.exe', 'posix': 'pip'}[os.name]
 VENV_PY_PATH = {'nt': 'python.exe', 'posix': 'python'}[os.name]
 VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
 
 
+def get_app_dir(name):
+    if os.name == 'nt':
+        root = os.getenv('APPDATA', os.path.join(os.path.expanduser('~'),
+            'AppData', 'Roaming'))
+    else:
+        root = os.getenv('HOME', os.path.join(os.path.expanduser('~'),
+            '.local', 'share'))
+    return os.path.join(root, name)
+
+
+def get_work_dir(name):
+    path = os.path.join(os.path.expanduser('~'), f'.{name}')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
 class Bootstrapper:
     def __init__(self, name, cmd_args=None, install_requires=None,
-                 force_reinstall=False, venv_dirname='venv', extra_cmds=None,
-                 schedule_minutes=2):
+                 force_reinstall=False, extra_cmds=None, schedule_minutes=2):
         self.name = name
         self.cmd_args = cmd_args
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
-        self.venv_dirname = venv_dirname
         self.extra_cmds = extra_cmds
         self.schedule_minutes = schedule_minutes
-        self.root_venv_dir = os.path.join(os.path.expanduser('~'),
-            self.venv_dirname)
-        self.venv_dir = os.path.join(self.root_venv_dir, self.name)
+        self.work_dir = get_work_dir(self.name)
+        self.venv_dir = os.path.join(self.work_dir, VENV_DIRNAME)
         self.venv_bin_dir = os.path.join(self.venv_dir, VENV_BIN_DIRNAME)
         self.pip_path = os.path.join(self.venv_bin_dir, VENV_PIP_PATH)
         self.py_path = os.path.join(self.venv_bin_dir, VENV_PY_PATH)
         self.svc_py_path = os.path.join(self.venv_bin_dir, VENV_SVC_PY_PATH)
-        self.script_dir = os.path.join(os.path.expanduser('~'),
-            f'.{self.name}')
 
     def setup_venv(self):
-        if not os.path.exists(self.root_venv_dir):
-            os.makedirs(self.root_venv_dir)
         if not os.path.exists(self.svc_py_path):
             if os.name == 'nt':   # requires python3-virtualenv on linux
                 subprocess.check_call(['pip', 'install', 'virtualenv'])
