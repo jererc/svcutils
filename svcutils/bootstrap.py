@@ -1,6 +1,7 @@
 import ctypes
 import os
 import subprocess
+import sys
 import tempfile
 
 
@@ -52,9 +53,8 @@ class Bootstrapper:
 
     def setup_venv(self):
         if not os.path.exists(self.svc_py_path):
-            if os.name == 'nt':   # requires python3-virtualenv on linux
-                subprocess.check_call(['pip', 'install', 'virtualenv'])
-            subprocess.check_call(['virtualenv', self.venv_dir])
+            subprocess.check_call([sys.executable, '-m', 'venv',
+                self.venv_dir])   # requires python3-venv
         if self.install_requires:
             base_cmd = [self.pip_path, 'install']
             if self.force_reinstall:
