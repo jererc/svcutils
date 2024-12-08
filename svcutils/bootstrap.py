@@ -158,7 +158,7 @@ objShortcut.Save
             os.remove(temp_vbs_path)
         return shortcut_path
 
-    def setup_script(self):
+    def setup_shortcut(self):
         self.setup_venv()
         cmd = self._get_cmd()
         if os.name == 'nt':
