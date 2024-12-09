@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import unittest
+from unittest.mock import patch
 
 from svcutils import bootstrap as module
 
@@ -31,7 +32,7 @@ class CrontabTestCase(unittest.TestCase):
         stdout = subprocess.check_output(['crontab', '-l']).decode('utf-8')
         return [r for r in stdout.splitlines() if self.name in r]
 
-    def test_crontab(self):
+    def test_1(self):
         bs = module.Bootstrapper(name=self.name,
             cmd_args=['module.main', 'arg1', '--flag1'])
         cmd = ' '.join(bs._get_cmd())
@@ -58,3 +59,37 @@ class CrontabTestCase(unittest.TestCase):
         print(res)
         self.assertEqual(len(res), 1)
         self.assertTrue(cmd in res[0])
+
+
+class DownloadAssetsTestCase(unittest.TestCase):
+    def setUp(self):
+        remove_path(WORK_DIR)
+        makedirs(WORK_DIR)
+        self.name = '__TEST__'
+        self.bs = module.Bootstrapper(
+            name=self.name,
+            cmd_args=['module.main', 'arg1', '--flag1'],
+            download_assets=[
+                ('user_settings.py', 'https://raw.githubusercontent.com/jererc/bodiez/refs/heads/main/bootstrap/user_settings.py'),
+            ],
+        )
+
+    def test_1(self):
+        with patch('os.getcwd', return_value=WORK_DIR):
+            self.bs._download_assets()
+        file = os.path.join(WORK_DIR, 'user_settings.py')
+        self.assertTrue(os.path.exists(file))
+        with open(file) as fd:
+            content = fd.read()
+        self.assertTrue(content)
+
+        content2 = 'NEW CONTENT'
+        with open(file, 'w') as fd:
+            fd.write(content2)
+
+        with patch('os.getcwd', return_value=WORK_DIR):
+            self.bs._download_assets()
+        self.assertTrue(os.path.exists(file))
+        with open(file) as fd:
+            content = fd.read()
+        self.assertEqual(content, content2)

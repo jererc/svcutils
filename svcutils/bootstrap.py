@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import urllib.request
 
 
 VENV_DIRNAME = 'venv'
@@ -37,13 +38,15 @@ def get_work_dir(name):
 
 class Bootstrapper:
     def __init__(self, name, cmd_args=None, install_requires=None,
-                 force_reinstall=False, extra_cmds=None, schedule_minutes=2):
+                 force_reinstall=False, extra_cmds=None, schedule_minutes=2,
+                 download_assets=None):
         self.name = name
         self.cmd_args = cmd_args
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
         self.extra_cmds = extra_cmds
         self.schedule_minutes = schedule_minutes
+        self.download_assets = download_assets
         self.work_dir = get_work_dir(self.name)
         self.venv_dir = os.path.join(self.work_dir, VENV_DIRNAME)
         self.venv_bin_dir = os.path.join(self.venv_dir, VENV_BIN_DIRNAME)
@@ -66,6 +69,15 @@ class Bootstrapper:
                 cmd = [self.py_path, '-m'] + extra_cmd
                 print(f'running {" ".join(cmd)}')
                 subprocess.check_call(cmd)
+
+    def _download_assets(self):
+        if not self.download_assets:
+            return
+        for filename, url in self.download_assets:
+            file = os.path.join(os.getcwd(), filename)
+            if not os.path.exists(file):
+                urllib.request.urlretrieve(url, file)
+                print(f'created {file}')
 
     def _get_cmd(self):
         if not self.cmd_args:
@@ -160,6 +172,7 @@ objShortcut.Save
 
     def setup_shortcut(self):
         self.setup_venv()
+        self._download_assets()
         cmd = self._get_cmd()
         if os.name == 'nt':
             file = self._create_windows_shortcut(
@@ -184,6 +197,7 @@ objShortcut.Save
 
     def setup_task(self):
         self.setup_venv()
+        self._download_assets()
         cmd = ' '.join(self._get_cmd())
         if os.name == 'nt':
             self._setup_windows_task(cmd=cmd, task_name=self.name)
