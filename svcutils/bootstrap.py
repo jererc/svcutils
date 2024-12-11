@@ -130,8 +130,8 @@ class Bootstrapper:
             '/rl', 'highest',
             '/f',
         ])
-        subprocess.check_call(['schtasks', '/run',
-            '/tn', task_name])
+        # subprocess.check_call(['schtasks', '/run',
+        #     '/tn', task_name])
         print(f'created the task {task_name}')
 
     def _create_linux_shortcut(self, name, cmd, shortcut_path,
