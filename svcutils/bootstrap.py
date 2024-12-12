@@ -55,7 +55,7 @@ class Bootstrapper:
         self.svc_py_path = os.path.join(self.venv_bin_dir, VENV_SVC_PY_PATH)
 
     def setup_venv(self):
-        if not os.path.exists(self.svc_py_path):
+        if not os.path.exists(self.pip_path):
             subprocess.check_call([sys.executable, '-m', 'venv',
                 self.venv_dir])   # requires python3-venv
         if self.install_requires:
