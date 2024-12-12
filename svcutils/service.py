@@ -251,6 +251,8 @@ class Notifier:
         env['DISPLAY'] = ':0'
         env['DBUS_SESSION_BUS_ADDRESS'] = \
             f'unix:path=/run/user/{os.getuid()}/bus'
+        if on_click:
+            body = f'{body} ({on_click})'
         subprocess.check_call(['notify-send', title, body], env=env)
 
     def send(self, *args, **kwargs):
