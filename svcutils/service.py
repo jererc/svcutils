@@ -242,18 +242,22 @@ class Service:
 
 
 class Notifier:
-    def _send_nt(self, title, body, on_click=None):
+    def _send_nt(self, title, body, app_name=None, on_click=None):
         from win11toast import notify
-        notify(title=title, body=body, on_click=on_click)
+        notify(title=title, body=body, app_id=app_name,
+            on_click=on_click)
 
-    def _send_posix(self, title, body, on_click=None):
+    def _send_posix(self, title, body, app_name=None, on_click=None):
         env = os.environ.copy()
         env['DISPLAY'] = ':0'
         env['DBUS_SESSION_BUS_ADDRESS'] = \
             f'unix:path=/run/user/{os.getuid()}/bus'
         if on_click:
-            body = f'{body} ({on_click})'
-        subprocess.check_call(['notify-send', title, body], env=env)
+            body = f'{body} {on_click}'
+        base_cmd = ['notify-send']
+        if app_name:
+            base_cmd += ['--app-name', app_name]
+        subprocess.check_call(base_cmd + [title, body], env=env)
 
     def send(self, *args, **kwargs):
         try:
