@@ -7,15 +7,15 @@ import tempfile
 import urllib.request
 
 
+ADMIN_DIR = {
+    'nt': os.environ.get('WINDIR', r'C:\Windows'),
+    'posix': '/root',
+}[os.name]
 VENV_DIRNAME = 'venv'
 VENV_BIN_DIRNAME = {'nt': 'Scripts', 'posix': 'bin'}[os.name]
 VENV_PIP_PATH = {'nt': 'pip.exe', 'posix': 'pip'}[os.name]
 VENV_PY_PATH = {'nt': 'python.exe', 'posix': 'python'}[os.name]
 VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
-ADMIN_DIR = {
-    'nt': os.environ.get('WINDIR', r'C:\Windows'),
-    'posix': '/root',
-}[os.name]
 
 
 def is_relative_to(target_path, base_path):
