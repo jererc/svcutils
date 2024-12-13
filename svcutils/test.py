@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import sys
 
+
 def is_relative_to(base_path, target_path):
     base = Path(base_path).resolve()
     target = Path(target_path).resolve()

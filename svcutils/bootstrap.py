@@ -1,5 +1,6 @@
 import ctypes
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,23 @@ VENV_BIN_DIRNAME = {'nt': 'Scripts', 'posix': 'bin'}[os.name]
 VENV_PIP_PATH = {'nt': 'pip.exe', 'posix': 'pip'}[os.name]
 VENV_PY_PATH = {'nt': 'python.exe', 'posix': 'python'}[os.name]
 VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
+ADMIN_DIR = {
+    'nt': os.environ.get('WINDIR', r'C:\Windows'),
+    'posix': '/root',
+}[os.name]
+
+
+def is_relative_to(base_path, target_path):
+    base = Path(base_path).resolve()
+    target = Path(target_path).resolve()
+    return target.is_relative_to(base)
+
+
+def get_valid_cwd():
+    path = os.getcwd()
+    if is_relative_to(ADMIN_DIR, path):
+        raise ValueError(f'invalid working dir {path}')
+    return path
 
 
 def makedirs(path):
@@ -48,13 +66,13 @@ class Bootstrapper:
         self.extra_cmds = extra_cmds
         self.schedule_minutes = schedule_minutes
         self.download_assets = download_assets
+        self.cwd = get_valid_cwd()
         self.work_dir = get_work_dir(self.name)
         self.venv_dir = os.path.join(self.work_dir, VENV_DIRNAME)
         self.venv_bin_dir = os.path.join(self.venv_dir, VENV_BIN_DIRNAME)
         self.pip_path = os.path.join(self.venv_bin_dir, VENV_PIP_PATH)
         self.py_path = os.path.join(self.venv_bin_dir, VENV_PY_PATH)
         self.svc_py_path = os.path.join(self.venv_bin_dir, VENV_SVC_PY_PATH)
-        self.bootstrap_dir = os.getcwd()
 
     def _run_venv_cmds(self, cmds):
         for cmd in cmds:
@@ -82,7 +100,7 @@ class Bootstrapper:
         if not self.download_assets:
             return
         for filename, url in self.download_assets:
-            file = os.path.join(self.bootstrap_dir, filename)
+            file = os.path.join(self.cwd, filename)
             if not os.path.exists(file):
                 urllib.request.urlretrieve(url, file)
                 print(f'created {file}')
@@ -189,7 +207,7 @@ objShortcut.Save
                     r'Microsoft\Windows\Start Menu\Programs',
                     f'{self.name}.lnk'),
                 arguments=' '.join(cmd[1:]),
-                working_dir=self.bootstrap_dir,
+                working_dir=self.cwd,
                 description=self.name,
             )
         else:
