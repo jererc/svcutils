@@ -55,11 +55,6 @@ class Bootstrapper:
         self.py_path = os.path.join(self.venv_bin_dir, VENV_PY_PATH)
         self.svc_py_path = os.path.join(self.venv_bin_dir, VENV_SVC_PY_PATH)
         self.bootstrap_dir = os.getcwd()
-        print(f'{self.bootstrap_dir=}')
-        print(f'{os.path.dirname(os.path.realpath(__file__))=}')
-        import time
-        time.sleep(10)
-        raise SystemExit(1)
 
     def _run_venv_cmds(self, cmds):
         for cmd in cmds:
