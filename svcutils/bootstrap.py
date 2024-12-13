@@ -27,7 +27,7 @@ def is_relative_to(base_path, target_path):
 def get_valid_cwd():
     path = os.getcwd()
     if is_relative_to(ADMIN_DIR, path):
-        raise ValueError(f'invalid working dir {path}')
+        raise SystemExit(f'invalid working dir {path}')
     return path
 
 
