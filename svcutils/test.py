@@ -1,5 +1,6 @@
 import os
 import sys
 
-print(f'{os.getcwd()}')
-print(f'{sys.argv}')
+print(f'{os.getcwd()=}')
+print(f'{__file__=}')
+print(f'{sys.argv=}')
