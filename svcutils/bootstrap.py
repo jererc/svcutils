@@ -18,15 +18,15 @@ ADMIN_DIR = {
 }[os.name]
 
 
-def is_relative_to(base_path, target_path):
-    base = Path(base_path).resolve()
+def is_relative_to(target_path, base_path):
     target = Path(target_path).resolve()
+    base = Path(base_path).resolve()
     return target.is_relative_to(base)
 
 
 def get_valid_cwd():
     path = os.getcwd()
-    if is_relative_to(ADMIN_DIR, path):
+    if is_relative_to(path, ADMIN_DIR):
         raise SystemExit(f'invalid working dir {path}')
     return path
 
