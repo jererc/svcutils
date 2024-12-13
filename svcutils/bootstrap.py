@@ -57,6 +57,7 @@ class Bootstrapper:
         self.bootstrap_dir = os.getcwd()
         print(f'{self.bootstrap_dir=}')
         print(f'{os.path.dirname(os.path.realpath(__file__))=}')
+        input('press any key to continue...')
         raise SystemExit(1)
 
     def _run_venv_cmds(self, cmds):
