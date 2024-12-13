@@ -12,7 +12,7 @@ def get_valid_cwd():
     path = os.getcwd()
     admin_dir = {
         'nt': os.environ.get('WINDIR', r'C:\Windows'),
-        'posix': os.environ.get('WINDIR', r'/root'),
+        'posix': '/root',
     }[os.name]
     if is_relative_to(admin_dir, path):
         raise ValueError(f'invalid current working dir {path}')
