@@ -38,12 +38,13 @@ def get_work_dir(name):
 
 class Bootstrapper:
     def __init__(self, name, cmd_args=None, install_requires=None,
-                 force_reinstall=False, extra_cmds=None, schedule_minutes=2,
-                 download_assets=None):
+                 force_reinstall=False, init_cmds=None, extra_cmds=None,
+                 download_assets=None, schedule_minutes=2):
         self.name = name
         self.cmd_args = cmd_args
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
+        self.init_cmds = init_cmds
         self.extra_cmds = extra_cmds
         self.schedule_minutes = schedule_minutes
         self.download_assets = download_assets
@@ -54,21 +55,27 @@ class Bootstrapper:
         self.py_path = os.path.join(self.venv_bin_dir, VENV_PY_PATH)
         self.svc_py_path = os.path.join(self.venv_bin_dir, VENV_SVC_PY_PATH)
 
+    def _run_venv_cmds(self, cmds):
+        for cmd in cmds:
+            venv_cmd = [self.py_path, '-m'] + cmd
+            print(f'running {" ".join(venv_cmd)}')
+            subprocess.check_call(venv_cmd)
+
     def setup_venv(self):
-        if not os.path.exists(self.pip_path):
+        requires_init = not os.path.exists(self.pip_path)
+        if requires_init:
             subprocess.check_call([sys.executable, '-m', 'venv',
                 self.venv_dir])   # requires python3-venv
+            print(f'created the virtualenv {self.venv_dir}')
         if self.install_requires:
             base_cmd = [self.pip_path, 'install']
             if self.force_reinstall:
                 base_cmd.append('--force-reinstall')
             subprocess.check_call(base_cmd + self.install_requires)
-        print(f'created the virtualenv {self.venv_dir}')
+        if requires_init and self.init_cmds:
+            self._run_venv_cmds(self.init_cmds)
         if self.extra_cmds:
-            for extra_cmd in self.extra_cmds:
-                cmd = [self.py_path, '-m'] + extra_cmd
-                print(f'running {" ".join(cmd)}')
-                subprocess.check_call(cmd)
+            self._run_venv_cmds(self.extra_cmds)
 
     def _download_assets(self):
         if not self.download_assets:
