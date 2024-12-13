@@ -77,7 +77,7 @@ class Bootstrapper:
     def _run_venv_cmds(self, cmds):
         for cmd in cmds:
             venv_cmd = [self.py_path, '-m'] + cmd
-            print(f'running {" ".join(venv_cmd)}')
+            print(f'running: {" ".join(venv_cmd)}')
             subprocess.check_call(venv_cmd)
 
     def setup_venv(self):
@@ -85,7 +85,7 @@ class Bootstrapper:
         if requires_init:
             subprocess.check_call([sys.executable, '-m', 'venv',
                 self.venv_dir])   # requires python3-venv
-            print(f'created the virtualenv {self.venv_dir}')
+            print(f'created virtualenv: {self.venv_dir}')
         if self.install_requires:
             base_cmd = [self.pip_path, 'install']
             if self.force_reinstall:
@@ -103,7 +103,7 @@ class Bootstrapper:
             file = os.path.join(self.cwd, filename)
             if not os.path.exists(file):
                 urllib.request.urlretrieve(url, file)
-                print(f'created {file}')
+                print(f'created asset: {file}')
 
     def _get_cmd(self):
         if not self.cmd_args:
@@ -143,7 +143,7 @@ class Bootstrapper:
             text=True)
         if res.returncode != 0:
             raise SystemExit('Error: failed to update crontab')
-        print(f'created the crontab job {new_job.strip()}')
+        print(f'created crontab job:\n{new_job.strip()}')
 
     def _setup_windows_task(self, cmd, task_name):
         if ctypes.windll.shell32.IsUserAnAdmin() == 0:
@@ -157,7 +157,7 @@ class Bootstrapper:
             '/rl', 'highest',
             '/f',
         ])
-        print(f'created the task {task_name}')
+        print(f'created task: {task_name}')
 
     def _create_linux_shortcut(self, name, cmd, shortcut_path,
             description=''):
@@ -218,7 +218,7 @@ objShortcut.Save
                     f'{self.name}.desktop'),
                 description=self.name,
             )
-        print(f'created shortcut {file}')
+        print(f'created shortcut: {file}')
 
     def setup_task(self):
         self.setup_venv()
