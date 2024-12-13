@@ -54,6 +54,10 @@ class Bootstrapper:
         self.pip_path = os.path.join(self.venv_bin_dir, VENV_PIP_PATH)
         self.py_path = os.path.join(self.venv_bin_dir, VENV_PY_PATH)
         self.svc_py_path = os.path.join(self.venv_bin_dir, VENV_SVC_PY_PATH)
+        self.bootstrap_dir = os.getcwd()
+        print(f'{self.bootstrap_dir=}')
+        print(f'{os.path.dirname(os.path.realpath(__file__))=}')
+        raise SystemExit(1)
 
     def _run_venv_cmds(self, cmds):
         for cmd in cmds:
@@ -81,7 +85,7 @@ class Bootstrapper:
         if not self.download_assets:
             return
         for filename, url in self.download_assets:
-            file = os.path.join(os.getcwd(), filename)
+            file = os.path.join(self.bootstrap_dir, filename)
             if not os.path.exists(file):
                 urllib.request.urlretrieve(url, file)
                 print(f'created {file}')
@@ -188,7 +192,7 @@ objShortcut.Save
                     r'Microsoft\Windows\Start Menu\Programs',
                     f'{self.name}.lnk'),
                 arguments=' '.join(cmd[1:]),
-                working_dir=os.getcwd(),
+                working_dir=self.bootstrap_dir,
                 description=self.name,
             )
         else:
