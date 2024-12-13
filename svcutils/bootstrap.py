@@ -27,7 +27,7 @@ def is_relative_to(target_path, base_path):
 def get_valid_cwd():
     path = os.getcwd()
     if is_relative_to(path, ADMIN_DIR):
-        raise SystemExit(f'invalid working dir {path}')
+        raise SystemExit(f'Error: invalid working dir {path}')
     return path
 
 
@@ -107,7 +107,7 @@ class Bootstrapper:
 
     def _get_cmd(self):
         if not self.cmd_args:
-            raise SystemExit('missing cmd_args')
+            raise SystemExit('Error: missing cmd_args')
         return [self.svc_py_path, '-m'] + self.cmd_args
 
     def _generate_crontab_schedule(self):
@@ -142,12 +142,13 @@ class Bootstrapper:
         res = subprocess.run(['crontab', '-'], input=updated_crontab,
             text=True)
         if res.returncode != 0:
-            raise SystemExit('failed to update crontab')
+            raise SystemExit('Error: failed to update crontab')
         print(f'created the crontab job {new_job.strip()}')
 
     def _setup_windows_task(self, cmd, task_name):
         if ctypes.windll.shell32.IsUserAnAdmin() == 0:
-            raise SystemExit('must run as admin to update scheduled tasks')
+            raise SystemExit('Error: must run as admin '
+                'to update scheduled tasks')
         subprocess.check_call(['schtasks', '/create',
             '/tn', task_name,
             '/tr', cmd,
@@ -156,8 +157,6 @@ class Bootstrapper:
             '/rl', 'highest',
             '/f',
         ])
-        # subprocess.check_call(['schtasks', '/run',
-        #     '/tn', task_name])
         print(f'created the task {task_name}')
 
     def _create_linux_shortcut(self, name, cmd, shortcut_path,
