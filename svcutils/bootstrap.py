@@ -7,9 +7,18 @@ import tempfile
 import urllib.request
 
 
+HOME_DIR = os.path.expanduser('~')
 ADMIN_DIR = {
-    'nt': os.environ.get('WINDIR', r'C:\Windows'),
+    'nt': os.getenv('WINDIR', r'C:\Windows'),
     'posix': '/root',
+}[os.name]
+APP_DATA_DIR = {
+    'nt': os.getenv('APPDATA', os.path.join(HOME_DIR, 'AppData', 'Roaming')),
+    'posix': os.getenv('HOME', os.path.join(HOME_DIR, '.local', 'share')),
+}[os.name]
+APP_DIR = {
+    'nt': os.path.join(APP_DATA_DIR, r'Microsoft\Windows\Start Menu\Programs'),
+    'posix': os.path.join(APP_DATA_DIR, 'applications'),
 }[os.name]
 VENV_DIRNAME = 'venv'
 VENV_BIN_DIRNAME = {'nt': 'Scripts', 'posix': 'bin'}[os.name]
@@ -37,19 +46,13 @@ def makedirs(path):
 
 
 def get_app_dir(name):
-    if os.name == 'nt':
-        root = os.getenv('APPDATA', os.path.join(os.path.expanduser('~'),
-            'AppData', 'Roaming'))
-    else:
-        root = os.getenv('HOME', os.path.join(os.path.expanduser('~'),
-            '.local', 'share'))
-    path = os.path.join(root, name)
+    path = os.path.join(APP_DATA_DIR, name)
     makedirs(path)
     return path
 
 
 def get_work_dir(name):
-    path = os.path.join(os.path.expanduser('~'), f'.{name}')
+    path = os.path.join(HOME_DIR, f'.{name}')
     makedirs(path)
     return path
 
@@ -171,7 +174,6 @@ Comment={description}
 """
         with open(shortcut_path, 'w') as fd:
             fd.write(content)
-        return shortcut_path
 
     def _create_windows_shortcut(self, target_path, shortcut_path,
             arguments='', working_dir='', description=''):
@@ -193,29 +195,26 @@ objShortcut.Save
             os.system(f'cscript //NoLogo "{temp_vbs_path}"')
         finally:
             os.remove(temp_vbs_path)
-        return shortcut_path
 
     def setup_shortcut(self):
         self.setup_venv()
         self._download_assets()
         cmd = self._get_cmd()
         if os.name == 'nt':
-            file = self._create_windows_shortcut(
+            file = os.path.join(APP_DIR, f'{self.name}.lnk')
+            self._create_windows_shortcut(
                 target_path=cmd[0],
-                shortcut_path=os.path.join(os.getenv('APPDATA'),
-                    r'Microsoft\Windows\Start Menu\Programs',
-                    f'{self.name}.lnk'),
+                shortcut_path=file,
                 arguments=' '.join(cmd[1:]),
                 working_dir=self.cwd,
                 description=self.name,
             )
         else:
-            file = self._create_linux_shortcut(
+            file = os.path.join(APP_DIR, f'{self.name}.desktop')
+            self._create_linux_shortcut(
                 name=self.name,
                 cmd=' '.join(cmd),
-                shortcut_path=os.path.join(os.path.expanduser('~'),
-                    '.local/share/applications',
-                    f'{self.name}.desktop'),
+                shortcut_path=file,
                 description=self.name,
             )
         print(f'created shortcut: {file}')

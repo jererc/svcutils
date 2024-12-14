@@ -8,6 +8,7 @@ from svcutils import bootstrap as module
 
 
 WORK_DIR = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
+NAME = '__TEST__'
 
 
 def remove_path(path):
@@ -22,9 +23,14 @@ def makedirs(path):
         os.makedirs(path)
 
 
+def get_bs(*args, **kwargs):
+    with patch('os.makedirs'):
+        return module.Bootstrapper(*args, **kwargs)
+
+
 class CrontabTestCase(unittest.TestCase):
     def _get_bs(self, schedule_minutes):
-        return module.Bootstrapper(name='name', cmd_args=['main'],
+        return get_bs(name=NAME, cmd_args=['main'],
             schedule_minutes=schedule_minutes)
 
     def test_1(self):
@@ -49,29 +55,28 @@ class BootstrapperTestCase(unittest.TestCase):
         remove_path(WORK_DIR)
         makedirs(WORK_DIR)
         self.args = {
-            'name': 'name',
+            'name': NAME,
             'cmd_args': ['module.main', 'arg', '--flag'],
         }
-        with patch('os.path.expanduser', return_value=WORK_DIR):
-            self.bs = module.Bootstrapper(**self.args)
+        self.bs = get_bs(**self.args)
 
     def test_cmd(self):
-        bs = module.Bootstrapper(name='name')
+        bs = get_bs(name=NAME)
         self.assertRaises(SystemExit, bs._get_cmd)
 
-        bs = module.Bootstrapper(name='name', cmd_args=['module.main'])
+        bs = get_bs(name=NAME, cmd_args=['module.main'])
         self.assertEqual(bs._get_cmd()[1:], ['-m', 'module.main'])
 
     def test_attrs(self):
         dirname = f'.{self.args["name"]}'
-        self.assertEqual(self.bs.venv_dir, os.path.join(WORK_DIR,
+        self.assertEqual(self.bs.venv_dir, os.path.join(os.path.expanduser('~'),
             dirname, module.VENV_DIRNAME))
         bin_dirname = 'Scripts' if os.name == 'nt' else 'bin'
         pip_filename = 'pip.exe' if os.name == 'nt' else 'pip'
         py_filename = 'pythonw.exe' if os.name == 'nt' else 'python'
-        self.assertEqual(self.bs.pip_path, os.path.join(WORK_DIR,
+        self.assertEqual(self.bs.pip_path, os.path.join(os.path.expanduser('~'),
             dirname, module.VENV_DIRNAME, bin_dirname, pip_filename))
-        self.assertEqual(self.bs.svc_py_path, os.path.join(WORK_DIR,
+        self.assertEqual(self.bs.svc_py_path, os.path.join(os.path.expanduser('~'),
             dirname, module.VENV_DIRNAME, bin_dirname, py_filename))
 
     def test_task(self):
