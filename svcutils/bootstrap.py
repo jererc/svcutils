@@ -26,15 +26,9 @@ VENV_PY_PATH = {'nt': 'python.exe', 'posix': 'python'}[os.name]
 VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
 
 
-def is_relative_to(target_path, base_path):
-    target = Path(target_path).resolve()
-    base = Path(base_path).resolve()
-    return target.is_relative_to(base)
-
-
 def get_valid_cwd():
     path = os.getcwd()
-    if is_relative_to(path, ADMIN_DIR):
+    if Path(path).resolve().is_relative_to(Path(ADMIN_DIR).resolve()):
         raise SystemExit(f'Error: invalid working dir {path}')
     return path
 
