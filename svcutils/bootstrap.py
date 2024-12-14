@@ -160,7 +160,7 @@ class Bootstrapper:
             '/rl', 'highest',
             '/f',
         ])
-        print(f'created task: {task_name}')
+        print(f'created scheduled task {task_name} with cmd:\n{cmd}')
 
     def _create_linux_shortcut(self, name, cmd, shortcut_path,
             description=''):
