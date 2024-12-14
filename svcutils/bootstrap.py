@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-import tempfile
 import urllib.request
 
 
@@ -187,14 +186,13 @@ objShortcut.WorkingDirectory = "{working_dir}"
 objShortcut.Description = "{description}"
 objShortcut.Save
 """
-        with tempfile.NamedTemporaryFile('w', delete=False, suffix='.vbs'
-                ) as temp_file:
-            temp_file.write(vbs_content)
-            temp_vbs_path = temp_file.name
+        temp_file = os.path.join(self.cwd, 'temp.vbs')
+        with open(temp_file, 'w') as fd:
+            fd.write(vbs_content)
         try:
-            os.system(f'cscript //NoLogo "{temp_vbs_path}"')
+            os.system(f'cscript //NoLogo "{temp_file}"')
         finally:
-            os.remove(temp_vbs_path)
+            os.remove(temp_file)
 
     def setup_shortcut(self):
         self.setup_venv()
