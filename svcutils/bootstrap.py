@@ -13,7 +13,7 @@ ADMIN_DIR = {
 }[os.name]
 APP_DATA_DIR = {
     'nt': os.getenv('APPDATA', os.path.join(HOME_DIR, 'AppData', 'Roaming')),
-    'posix': os.getenv('HOME', os.path.join(HOME_DIR, '.local', 'share')),
+    'posix': os.path.join(os.getenv('HOME', HOME_DIR), '.local', 'share'),
 }[os.name]
 APP_DIR = {
     'nt': os.path.join(APP_DATA_DIR, r'Microsoft\Windows\Start Menu\Programs'),
@@ -167,6 +167,7 @@ Comment={description}
 """
         with open(shortcut_path, 'w') as fd:
             fd.write(content)
+        subprocess.check_call(['chmod', '+x', shortcut_path])
 
     def _create_windows_shortcut(self, target_path, shortcut_path,
             arguments='', working_dir='', description=''):
