@@ -53,7 +53,8 @@ def get_work_dir(name):
 class Bootstrapper:
     def __init__(self, name, cmd_args=None, install_requires=None,
                  force_reinstall=False, init_cmds=None, extra_cmds=None,
-                 download_assets=None, schedule_minutes=2):
+                 download_assets=None, shortcut_terminal=False,
+                 schedule_minutes=2):
         self.name = name
         self.cmd_args = cmd_args
         self.install_requires = install_requires
@@ -62,6 +63,7 @@ class Bootstrapper:
         self.extra_cmds = extra_cmds
         self.schedule_minutes = schedule_minutes
         self.download_assets = download_assets
+        self.shortcut_terminal = shortcut_terminal
         self.cwd = get_valid_cwd()
         self.work_dir = get_work_dir(self.name)
         self.venv_dir = os.path.join(self.work_dir, VENV_DIRNAME)
@@ -104,7 +106,8 @@ class Bootstrapper:
     def _get_cmd(self):
         if not self.cmd_args:
             raise SystemExit('Error: missing cmd_args')
-        return [self.svc_py_path, '-m'] + self.cmd_args
+        py_path = self.py_path if self.shortcut_terminal else self.svc_py_path
+        return [py_path, '-m'] + self.cmd_args
 
     def _generate_crontab_schedule(self):
         match self.schedule_minutes:
