@@ -51,11 +51,13 @@ def get_work_dir(name):
 
 
 class Bootstrapper:
-    def __init__(self, name, cmd_args=None, install_requires=None,
-                 force_reinstall=False, init_cmds=None, extra_cmds=None,
-                 download_assets=None, schedule_minutes=2):
+    def __init__(self, name, cmd_args=None, cmd_terminal=False,
+                 install_requires=None, force_reinstall=False,
+                 init_cmds=None, extra_cmds=None, download_assets=None,
+                 schedule_minutes=2):
         self.name = name
         self.cmd_args = cmd_args
+        self.cmd_terminal = cmd_terminal
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
         self.init_cmds = init_cmds
@@ -101,10 +103,10 @@ class Bootstrapper:
                 urllib.request.urlretrieve(url, file)
                 print(f'created asset: {file}')
 
-    def _get_cmd(self, terminal=False):
+    def _get_cmd(self):
         if not self.cmd_args:
             raise SystemExit('Error: missing cmd_args')
-        py_path = self.py_path if terminal else self.svc_py_path
+        py_path = self.py_path if self.cmd_terminal else self.svc_py_path
         return [py_path, '-m'] + self.cmd_args
 
     def _generate_crontab_schedule(self):
@@ -190,10 +192,10 @@ objShortcut.Save
         finally:
             os.remove(temp_file)
 
-    def setup_shortcut(self, terminal=False):
+    def setup_shortcut(self):
         self.setup_venv()
         self._download_assets()
-        cmd = self._get_cmd(terminal=terminal)
+        cmd = self._get_cmd()
         if os.name == 'nt':
             file = os.path.join(APP_DIR, f'{self.name}.lnk')
             self._create_windows_shortcut(
