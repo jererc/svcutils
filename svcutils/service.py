@@ -1,4 +1,3 @@
-import atexit
 import functools
 import importlib.util
 import json
@@ -6,14 +5,17 @@ import logging
 from logging.handlers import RotatingFileHandler
 from math import ceil
 import os
-import signal
 import socket
 import subprocess
 import sys
 import time
 
+import psutil
+
 from svcutils.bootstrap import get_app_dir, get_work_dir
 
+
+LOCK_FILENAME = '.svc.lock'
 
 logger = logging.getLogger(__name__)
 
@@ -57,40 +59,32 @@ def get_file_mtime(x):
     return os.stat(x).st_mtime
 
 
-def with_lockfile(path):
-    lockfile_path = os.path.join(path, '.svc.lock')
+def single_instance(path):
+    lockfile = os.path.join(path, LOCK_FILENAME)
 
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            if os.name == 'posix' and os.path.exists(lockfile_path):
-                logger.error(f'Lock file {lockfile_path} exists. '
-                    'Another process may be running.')
-                raise RuntimeError(f'Lock file {lockfile_path} exists. '
-                    'Another process may be running.')
-
-            def remove_lockfile():
-                if os.path.exists(lockfile_path):
-                    os.remove(lockfile_path)
-
-            atexit.register(remove_lockfile)
-
-            def handle_signal(signum, frame):
-                remove_lockfile()
-                raise SystemExit(f'Program terminated by signal {signum}')
-
-            if os.name == 'posix':
-                signal.signal(signal.SIGINT, handle_signal)
-                signal.signal(signal.SIGTERM, handle_signal)
-
+            if os.path.exists(lockfile):
+                with open(lockfile, 'r') as fd:
+                    try:
+                        old_pid = int(fd.read().strip())
+                    except ValueError:
+                        old_pid = None
+                if old_pid and psutil.pid_exists(old_pid):
+                    raise SystemExit(f'Another instance (PID={old_pid}) '
+                        'is running. Exiting.')
+                else:
+                    logger.warning('Found a stale lockfile. Removing it.')
+                    os.remove(lockfile)
+            current_pid = os.getpid()
+            with open(lockfile, 'w') as fd:
+                fd.write(str(current_pid))
             try:
-                with open(lockfile_path, 'w') as lockfile:
-                    lockfile.write('locked')
-                result = func(*args, **kwargs)
+                return func(*args, **kwargs)
             finally:
-                remove_lockfile()
-            return result
-
+                if os.path.exists(lockfile):
+                    os.remove(lockfile)
         return wrapper
     return decorator
 
@@ -195,7 +189,6 @@ class Service:
     def _check_cpu_usage(self):
         if not self.max_cpu_percent:
             return True
-        import psutil
         cpu_percent = psutil.cpu_percent(interval=1)
         if cpu_percent > self.max_cpu_percent:
             logger.info('cpu percent is greater than '
@@ -224,14 +217,14 @@ class Service:
             logger.exception('service failed')
 
     def run_once(self):
-        @with_lockfile(self.work_dir)
+        @single_instance(self.work_dir)
         def run():
             self._attempt_run()
 
         run()
 
     def run(self):
-        @with_lockfile(self.work_dir)
+        @single_instance(self.work_dir)
         def run():
             while True:
                 self._attempt_run()

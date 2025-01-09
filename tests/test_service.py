@@ -376,3 +376,34 @@ class RuntimeTestCase(unittest.TestCase):
                 svc.run_once()
                 time.sleep(1)
         self.assertTrue(self.runs)
+
+
+class SingleInstanceTestCase(unittest.TestCase):
+    def setUp(self):
+        remove_path(WORK_DIR)
+        makedirs(WORK_DIR)
+        self.lock_file = os.path.join(WORK_DIR, module.LOCK_FILENAME)
+        self.pid_file = os.path.join(WORK_DIR, 'pids.txt')
+
+    @module.single_instance(WORK_DIR)
+    def _target(self):
+        with open(self.pid_file, 'a') as fd:
+            fd.write(f'{os.getpid()}\n')
+        time.sleep(2)
+
+    def test_1(self):
+        pids = []
+        p1 = Process(target=self._target)
+        p1.start()
+        pids.append(p1.pid)
+        p2 = Process(target=self._target)
+        p2.start()
+        time.sleep(3)
+        p3 = Process(target=self._target)
+        p3.start()
+        pids.append(p3.pid)
+        time.sleep(3)
+        self.assertFalse(os.path.exists(self.lock_file))
+        with open(self.pid_file) as fd:
+            ran_pids = [int(r) for r in fd.read().splitlines()]
+        self.assertEqual(ran_pids, pids)
