@@ -101,7 +101,6 @@ if sys.platform == 'win32':
         """
         if hwnd is None:
             hwnd = win32gui.GetForegroundWindow()
-            logger.info(f'current window title: {win32gui.GetWindowText(hwnd)}')
         if not hwnd or not win32gui.IsWindowVisible(hwnd) or win32gui.IsIconic(hwnd):
             return False
 
@@ -114,12 +113,15 @@ if sys.platform == 'win32':
         mon_left, mon_top, mon_right, mon_bottom = mon_info["Monitor"]
 
         # Compare with a small tolerance to survive off-by-one DPI math
-        return (
+        res = (
             abs(win_left - mon_left) <= tolerance and
             abs(win_top - mon_top) <= tolerance and
             abs(win_right - mon_right) <= tolerance and
             abs(win_bottom - mon_bottom) <= tolerance
         )
+        if res:
+            logger.info(f'current window "{win32gui.GetWindowText(hwnd)}" is fullscreen')
+        return res
 else:
     def is_fullscreen(hwnd=None, tolerance=2) -> bool:
         return False
@@ -224,7 +226,6 @@ class Service:
 
     def _check_system(self):
         if is_fullscreen():
-            logger.info('current window is fullscreen')
             return False
         if self.max_cpu_percent:
             cpu_percent = psutil.cpu_percent(interval=1)
