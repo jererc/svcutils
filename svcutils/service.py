@@ -238,11 +238,11 @@ class Service:
             if now_ts > run_ts + self.force_run_delta:
                 logger.info(f'force run after {self.force_run_delta} seconds')
                 return True
-            if self.max_cpu_percent:
-                if psutil.cpu_percent(interval=1) > self.max_cpu_percent:
-                    logger.info('cpu usage is greater than '
-                        f'{self.max_cpu_percent}%')
-                    return False
+            if (self.max_cpu_percent and
+                    psutil.cpu_percent(interval=1) > self.max_cpu_percent):
+                logger.info('cpu usage is greater than '
+                    f'{self.max_cpu_percent}%')
+                return False
         return True
 
     def _attempt_run(self):
