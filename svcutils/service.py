@@ -101,6 +101,7 @@ if sys.platform == 'win32':
         """
         if hwnd is None:
             hwnd = win32gui.GetForegroundWindow()
+            logger.info(f'current window title: {win32gui.GetWindowText(hwnd)}')
         if not hwnd or not win32gui.IsWindowVisible(hwnd) or win32gui.IsIconic(hwnd):
             return False
 
@@ -223,12 +224,12 @@ class Service:
 
     def _check_system(self):
         if is_fullscreen():
-            logger.info('the current window is fullscreen')
+            logger.info('current window is fullscreen')
             return False
         if self.max_cpu_percent:
             cpu_percent = psutil.cpu_percent(interval=1)
             if cpu_percent > self.max_cpu_percent:
-                logger.info('the cpu percent is greater than '
+                logger.info('cpu percent is greater than '
                     f'{self.max_cpu_percent} ({cpu_percent})')
                 return False
         return True
