@@ -121,12 +121,9 @@ if sys.platform == 'win32':
         )
         if res:
             logger.info(f'current window "{win32gui.GetWindowText(hwnd)}" is fullscreen')
-        else:
-            logger.info(f'current window "{win32gui.GetWindowText(hwnd)}" is not fullscreen')
         return res
 else:
     def is_fullscreen(hwnd=None, tolerance=2) -> bool:
-        logger.info('can not check fullscreen on this platform')
         return False
 
 
