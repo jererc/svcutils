@@ -239,7 +239,6 @@ class Service:
                 logger.info(f'force run after {self.force_run_delta} seconds')
                 return True
             if self.max_cpu_percent:
-                cpu_percent = psutil.cpu_percent(interval=1)
                 if psutil.cpu_percent(interval=1) > self.max_cpu_percent:
                     logger.info('cpu usage is greater than '
                         f'{self.max_cpu_percent}%')
