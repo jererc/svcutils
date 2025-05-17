@@ -120,7 +120,7 @@ if sys.platform == 'win32':
             abs(win_bottom - mon_bottom) <= tolerance
         )
         if res:
-            logger.info(f'current window "{win32gui.GetWindowText(hwnd)}" is fullscreen')
+            logger.info(f'window "{win32gui.GetWindowText(hwnd)}" is fullscreen')
         return res
 else:
     def is_fullscreen(hwnd=None, tolerance=2) -> bool:
