@@ -218,33 +218,33 @@ class Service:
         self.kwargs = kwargs or {}
         self.work_dir = work_dir
         self.run_delta = run_delta
-        self.force_run_delta = force_run_delta or run_delta * 2
+        self.force_run_delta = force_run_delta or run_delta * 4
         self.max_cpu_percent = max_cpu_percent
         self.daemon_loop_delta = daemon_loop_delta
         self.tracker = ServiceTracker(work_dir, **tracker_args)
         self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
 
-    def _check_system(self):
+    def _must_run(self):
+        run_ts = self.run_file.get_ts()
+        now_ts = time.time()
+        if now_ts < run_ts + self.run_delta:
+            return False
+        if not self.tracker.check():
+            return False
         try:
             if is_fullscreen():
                 return False
         except NotImplementedError:
+            if now_ts > run_ts + self.force_run_delta:
+                logger.info(f'force run after {self.force_run_delta} seconds')
+                return True
             if self.max_cpu_percent:
                 cpu_percent = psutil.cpu_percent(interval=1)
-                if cpu_percent > self.max_cpu_percent:
-                    logger.info('cpu percent is greater than '
-                        f'{self.max_cpu_percent} ({cpu_percent})')
+                if psutil.cpu_percent(interval=1) > self.max_cpu_percent:
+                    logger.info('cpu usage is greater than '
+                        f'{self.max_cpu_percent}%')
                     return False
         return True
-
-    def _must_run(self):
-        run_ts = self.run_file.get_ts()
-        now_ts = time.time()
-        if self.force_run_delta and now_ts > run_ts + self.force_run_delta:
-            return self.tracker.check()
-        if now_ts > run_ts + self.run_delta:
-            return self.tracker.check() and self._check_system()
-        return False
 
     def _attempt_run(self):
         try:
