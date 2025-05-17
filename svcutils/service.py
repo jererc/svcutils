@@ -124,7 +124,7 @@ if sys.platform == 'win32':
         return res
 else:
     def is_fullscreen(hwnd=None, tolerance=2) -> bool:
-        return False
+        raise NotImplementedError()
 
 
 class ConfigNotFound(Exception):
@@ -225,14 +225,16 @@ class Service:
         self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
 
     def _check_system(self):
-        if is_fullscreen():
-            return False
-        if self.max_cpu_percent:
-            cpu_percent = psutil.cpu_percent(interval=1)
-            if cpu_percent > self.max_cpu_percent:
-                logger.info('cpu percent is greater than '
-                    f'{self.max_cpu_percent} ({cpu_percent})')
+        try:
+            if is_fullscreen():
                 return False
+        except NotImplementedError:
+            if self.max_cpu_percent:
+                cpu_percent = psutil.cpu_percent(interval=1)
+                if cpu_percent > self.max_cpu_percent:
+                    logger.info('cpu percent is greater than '
+                        f'{self.max_cpu_percent} ({cpu_percent})')
+                    return False
         return True
 
     def _must_run(self):
