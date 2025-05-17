@@ -89,6 +89,41 @@ def single_instance(path):
     return decorator
 
 
+if sys.platform == 'win32':
+    import win32api
+    import win32con
+    import win32gui
+
+    def is_fullscreen(hwnd=None, tolerance=2) -> bool:
+        """
+        Return True if `hwnd` appears to cover its entire monitor.
+        If no hwnd is given, use the current foreground window.
+        """
+        if hwnd is None:
+            hwnd = win32gui.GetForegroundWindow()
+        if not hwnd or not win32gui.IsWindowVisible(hwnd) or win32gui.IsIconic(hwnd):
+            return False
+
+        # Rectangle of the window (left, top, right, bottom)
+        win_left, win_top, win_right, win_bottom = win32gui.GetWindowRect(hwnd)
+
+        # Rectangle of the monitor that contains most of the window
+        hmon = win32api.MonitorFromWindow(hwnd, win32con.MONITOR_DEFAULTTONEAREST)
+        mon_info = win32api.GetMonitorInfo(hmon)
+        mon_left, mon_top, mon_right, mon_bottom = mon_info["Monitor"]
+
+        # Compare with a small tolerance to survive off-by-one DPI math
+        return (
+            abs(win_left - mon_left) <= tolerance and
+            abs(win_top - mon_top) <= tolerance and
+            abs(win_right - mon_right) <= tolerance and
+            abs(win_bottom - mon_bottom) <= tolerance
+        )
+else:
+    def is_fullscreen(hwnd=None, tolerance=2) -> bool:
+        return False
+
+
 class ConfigNotFound(Exception):
     pass
 
@@ -186,14 +221,16 @@ class Service:
         self.tracker = ServiceTracker(work_dir, **tracker_args)
         self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
 
-    def _check_cpu_usage(self):
-        if not self.max_cpu_percent:
-            return True
-        cpu_percent = psutil.cpu_percent(interval=1)
-        if cpu_percent > self.max_cpu_percent:
-            logger.info('cpu percent is greater than '
-                f'{self.max_cpu_percent} ({cpu_percent})')
+    def _check_system(self):
+        if is_fullscreen():
+            logger.info('the current window is fullscreen')
             return False
+        if self.max_cpu_percent:
+            cpu_percent = psutil.cpu_percent(interval=1)
+            if cpu_percent > self.max_cpu_percent:
+                logger.info('the cpu percent is greater than '
+                    f'{self.max_cpu_percent} ({cpu_percent})')
+                return False
         return True
 
     def _must_run(self):
@@ -202,7 +239,7 @@ class Service:
         if self.force_run_delta and now_ts > run_ts + self.force_run_delta:
             return self.tracker.check()
         if now_ts > run_ts + self.run_delta:
-            return self.tracker.check() and self._check_cpu_usage()
+            return self.tracker.check() and self._check_system()
         return False
 
     def _attempt_run(self):

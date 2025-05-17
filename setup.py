@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='svcutils',
-    version='2025.01.09.082914',
+    version='2025.05.17.073631',
     author='jererc',
     author_email='jererc@gmail.com',
     url='https://github.com/jererc/svcutils',
@@ -14,6 +14,7 @@ setup(
     extras_require={
         'dev': ['flake8', 'pytest'],
         ':sys_platform == "win32"': [
+            'pywin32',
             'win11toast',
         ],
     },
