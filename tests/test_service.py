@@ -178,7 +178,7 @@ class MustRunTestCase(unittest.TestCase):
 
     def test_cpu_percent(self):
         with patch.object(module, 'is_fullscreen',
-                          side_effect=NotImplementedError):
+                          side_effect=Exception):
 
             with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
                     patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
