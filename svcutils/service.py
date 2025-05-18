@@ -94,13 +94,12 @@ if sys.platform == 'win32':
     import win32con
     import win32gui
 
-    def is_fullscreen(hwnd=None, tolerance=2) -> bool:
+    def is_fullscreen(tolerance=2):
         """
         Return True if `hwnd` appears to cover its entire monitor.
         If no hwnd is given, use the current foreground window.
         """
-        if hwnd is None:
-            hwnd = win32gui.GetForegroundWindow()
+        hwnd = win32gui.GetForegroundWindow()
         if not hwnd or not win32gui.IsWindowVisible(hwnd) or win32gui.IsIconic(hwnd):
             return False
 
@@ -123,8 +122,19 @@ if sys.platform == 'win32':
             logger.info(f'window "{win32gui.GetWindowText(hwnd)}" is fullscreen')
         return res
 else:
-    def is_fullscreen(hwnd=None, tolerance=2) -> bool:
-        raise NotImplementedError()
+    from ewmh import EWMH
+
+    def is_fullscreen():
+        ewmh = EWMH()
+        win = ewmh.getActiveWindow()
+        if win is None:
+            return False
+        states = ewmh.getWmState(win, str) or []
+        res = "_NET_WM_STATE_FULLSCREEN" in states
+        if res:
+            title = ewmh.getWmName(win).decode('utf-8')   # or win.get_wm_name()
+            logger.info(f'window "{title}" is fullscreen')
+        return res
 
 
 class ConfigNotFound(Exception):
@@ -236,8 +246,7 @@ class Service:
         except NotImplementedError:
             if (self.max_cpu_percent and
                     psutil.cpu_percent(interval=1) > self.max_cpu_percent):
-                logger.info('cpu usage is greater than '
-                    f'{self.max_cpu_percent}%')
+                logger.info(f'cpu usage is greater than {self.max_cpu_percent}%')
                 return False
         return True
 
