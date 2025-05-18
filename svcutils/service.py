@@ -106,11 +106,10 @@ def _get_display_env(keys=None):
         'DISPLAY': ':0',
         'DBUS_SESSION_BUS_ADDRESS': f'unix:path=/run/user/{os.getuid()}/bus',
     }
-    # Try to find XAUTHORITY in common locations
     xauth_paths = [
         os.path.expanduser('~/.Xauthority'),
-        f'/run/user/{os.getuid()}/gdm/Xauthority',  # Common GDM location
-        '/var/run/gdm/auth-for-gdm*/database'  # Another common GDM location
+        f'/run/user/{os.getuid()}/gdm/Xauthority',
+        '/var/run/gdm/auth-for-gdm*/database'
     ]
     for path in xauth_paths:
         if os.path.exists(path):
@@ -125,23 +124,13 @@ if sys.platform == 'win32':
     import win32gui
 
     def is_fullscreen(tolerance=2):
-        """
-        Return True if `hwnd` appears to cover its entire monitor.
-        If no hwnd is given, use the current foreground window.
-        """
         hwnd = win32gui.GetForegroundWindow()
         if not hwnd or not win32gui.IsWindowVisible(hwnd) or win32gui.IsIconic(hwnd):
             return False
-
-        # Rectangle of the window (left, top, right, bottom)
         win_left, win_top, win_right, win_bottom = win32gui.GetWindowRect(hwnd)
-
-        # Rectangle of the monitor that contains most of the window
         hmon = win32api.MonitorFromWindow(hwnd, win32con.MONITOR_DEFAULTTONEAREST)
         mon_info = win32api.GetMonitorInfo(hmon)
         mon_left, mon_top, mon_right, mon_bottom = mon_info["Monitor"]
-
-        # Compare with a small tolerance to survive off-by-one DPI math
         res = (
             abs(win_left - mon_left) <= tolerance and
             abs(win_top - mon_top) <= tolerance and
@@ -157,7 +146,6 @@ else:
     def is_fullscreen():
         if not os.environ.get('DISPLAY'):
             os.environ.update(_get_display_env())
-
         ewmh = EWMH()
         win = ewmh.getActiveWindow()
         if win is None:
