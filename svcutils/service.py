@@ -211,14 +211,13 @@ class ServiceTracker:
 
 class Service:
     def __init__(self, target, work_dir, args=None, kwargs=None,
-                 run_delta=60, force_run_delta=None, max_cpu_percent=None,
-                 daemon_loop_delta=60, **tracker_args):
+                 run_delta=60, max_cpu_percent=None, daemon_loop_delta=60,
+                 **tracker_args):
         self.target = target
         self.args = args or ()
         self.kwargs = kwargs or {}
         self.work_dir = work_dir
         self.run_delta = run_delta
-        self.force_run_delta = force_run_delta or run_delta * 4
         self.max_cpu_percent = max_cpu_percent
         self.daemon_loop_delta = daemon_loop_delta
         self.tracker = ServiceTracker(work_dir, **tracker_args)
@@ -235,9 +234,6 @@ class Service:
             if is_fullscreen():
                 return False
         except NotImplementedError:
-            if now_ts > run_ts + self.force_run_delta:
-                logger.info(f'force run after {self.force_run_delta} seconds')
-                return True
             if (self.max_cpu_percent and
                     psutil.cpu_percent(interval=1) > self.max_cpu_percent):
                 logger.info('cpu usage is greater than '

@@ -177,7 +177,6 @@ class MustRunTestCase(unittest.TestCase):
                 target=self.target,
                 work_dir=self.work_dir,
                 run_delta=10,
-                force_run_delta=20,
                 max_cpu_percent=10,
             )._must_run())
 
@@ -189,32 +188,6 @@ class MustRunTestCase(unittest.TestCase):
                 target=self.target,
                 work_dir=self.work_dir,
                 run_delta=10,
-                force_run_delta=20,
-                max_cpu_percent=10,
-            )._must_run())
-
-    def test_force_run(self):
-        with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-            mock_get_ts.return_value = time.time() - 11
-            mock_cpu_percent.return_value = 20
-            self.assertFalse(module.Service(
-                target=self.target,
-                work_dir=self.work_dir,
-                run_delta=10,
-                force_run_delta=20,
-                max_cpu_percent=10,
-            )._must_run())
-
-        with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-            mock_get_ts.return_value = time.time() - 21
-            mock_cpu_percent.return_value = 20
-            self.assertTrue(module.Service(
-                target=self.target,
-                work_dir=self.work_dir,
-                run_delta=10,
-                force_run_delta=20,
                 max_cpu_percent=10,
             )._must_run())
 
