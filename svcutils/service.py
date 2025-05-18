@@ -125,16 +125,32 @@ else:
     from ewmh import EWMH
 
     def is_fullscreen():
-        ewmh = EWMH()
-        win = ewmh.getActiveWindow()
-        if win is None:
+        if not os.environ.get('DISPLAY'):
+            # Try to find the display from a logged in user
+            for proc in psutil.process_iter(['pid', 'environ']):
+                try:
+                    if proc.info['environ'].get('DISPLAY'):
+                        os.environ['DISPLAY'] = proc.info['environ']['DISPLAY']
+                        break
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+            if not os.environ.get('DISPLAY'):
+                os.environ['DISPLAY'] = ':0'  # Fallback to default display
+
+        try:
+            ewmh = EWMH()
+            win = ewmh.getActiveWindow()
+            if win is None:
+                return False
+            states = ewmh.getWmState(win, str) or []
+            res = "_NET_WM_STATE_FULLSCREEN" in states
+            if res:
+                title = ewmh.getWmName(win).decode('utf-8')   # or win.get_wm_name()
+                logger.info(f'window "{title}" is fullscreen')
+            return res
+        except Exception:
+            logger.exception('failed to check if fullscreen')
             return False
-        states = ewmh.getWmState(win, str) or []
-        res = "_NET_WM_STATE_FULLSCREEN" in states
-        if res:
-            title = ewmh.getWmName(win).decode('utf-8')   # or win.get_wm_name()
-            logger.info(f'window "{title}" is fullscreen')
-        return res
 
 
 class ConfigNotFound(Exception):
