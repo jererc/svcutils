@@ -1,6 +1,7 @@
 import logging
 from multiprocessing import Process
 import os
+from pprint import pprint
 import shutil
 import signal
 import time
@@ -140,6 +141,13 @@ class ServiceTrackerTestCase(unittest.TestCase):
             [now, 1],
         ]
         self.assertTrue(st.check())
+
+
+class DisplayEnvTestCase(unittest.TestCase):
+    def test_display_env(self):
+        res = module._get_display_env()
+        pprint(res)
+        self.assertTrue({res[k] for k in ['DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS']})
 
 
 class MustRunTestCase(unittest.TestCase):

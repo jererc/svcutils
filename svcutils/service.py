@@ -89,6 +89,36 @@ def single_instance(path):
     return decorator
 
 
+def _get_display_env(keys=None):
+    if keys is None:
+        keys = ['DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS']
+    for proc in psutil.process_iter(['pid', 'environ']):
+        try:
+            env = proc.info['environ'] or {}
+            res = {k: env.get(k) for k in keys}
+            if all(res.values()):
+                return res
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
+    # Fallback to default display
+    res = {
+        'DISPLAY': ':0',
+        'DBUS_SESSION_BUS_ADDRESS': f'unix:path=/run/user/{os.getuid()}/bus',
+    }
+    # Try to find XAUTHORITY in common locations
+    xauth_paths = [
+        os.path.expanduser('~/.Xauthority'),
+        f'/run/user/{os.getuid()}/gdm/Xauthority',  # Common GDM location
+        '/var/run/gdm/auth-for-gdm*/database'  # Another common GDM location
+    ]
+    for path in xauth_paths:
+        if os.path.exists(path):
+            res['XAUTHORITY'] = path
+            break
+    return res
+
+
 if sys.platform == 'win32':
     import win32api
     import win32con
@@ -125,45 +155,19 @@ else:
     from ewmh import EWMH
 
     def is_fullscreen():
-        try:
-            if not os.environ.get('DISPLAY'):
-                # Try to find the display and auth from a logged in user
-                for proc in psutil.process_iter(['pid', 'environ']):
-                    try:
-                        env = proc.info['environ']
-                        if env.get('DISPLAY'):
-                            os.environ['DISPLAY'] = env['DISPLAY']
-                            if env.get('XAUTHORITY'):
-                                os.environ['XAUTHORITY'] = env['XAUTHORITY']
-                            break
-                    except (AttributeError, psutil.NoSuchProcess, psutil.AccessDenied):
-                        continue
-                if not os.environ.get('DISPLAY'):
-                    os.environ['DISPLAY'] = ':0'  # Fallback to default display
-                    # Try to find XAUTHORITY in common locations
-                    xauth_paths = [
-                        os.path.expanduser('~/.Xauthority'),
-                        '/run/user/1000/gdm/Xauthority',  # Common GDM location
-                        '/var/run/gdm/auth-for-gdm*/database'  # Another common GDM location
-                    ]
-                    for path in xauth_paths:
-                        if os.path.exists(path):
-                            os.environ['XAUTHORITY'] = path
-                            break
+        if not os.environ.get('DISPLAY'):
+            os.environ.update(_get_display_env())
 
-            ewmh = EWMH()
-            win = ewmh.getActiveWindow()
-            if win is None:
-                return False
-            states = ewmh.getWmState(win, str) or []
-            res = "_NET_WM_STATE_FULLSCREEN" in states
-            if res:
-                title = ewmh.getWmName(win).decode('utf-8')   # or win.get_wm_name()
-                logger.info(f'window "{title}" is fullscreen')
-            return res
-        except Exception:
-            logger.exception('failed to check if fullscreen')
+        ewmh = EWMH()
+        win = ewmh.getActiveWindow()
+        if win is None:
             return False
+        states = ewmh.getWmState(win, str) or []
+        res = "_NET_WM_STATE_FULLSCREEN" in states
+        if res:
+            title = ewmh.getWmName(win).decode('utf-8')   # or win.get_wm_name()
+            logger.info(f'window "{title}" is fullscreen')
+        return res
 
 
 class ConfigNotFound(Exception):
@@ -277,6 +281,8 @@ class Service:
                     psutil.cpu_percent(interval=1) > self.max_cpu_percent):
                 logger.info(f'cpu usage is greater than {self.max_cpu_percent}%')
                 return False
+        except Exception:
+            logger.exception('failed to check if fullscreen')
         return True
 
     def _attempt_run(self):
@@ -316,9 +322,8 @@ class Notifier:
 
     def _send_posix(self, title, body, app_name=None, on_click=None):
         env = os.environ.copy()
-        env['DISPLAY'] = ':0'
-        env['DBUS_SESSION_BUS_ADDRESS'] = \
-            f'unix:path=/run/user/{os.getuid()}/bus'
+        if not env.get('DISPLAY'):
+            env.update(_get_display_env())
         if on_click:
             body = f'{body} {on_click}'
         base_cmd = ['notify-send']
