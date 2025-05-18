@@ -127,16 +127,29 @@ else:
     def is_fullscreen():
         try:
             if not os.environ.get('DISPLAY'):
-                # Try to find the display from a logged in user
+                # Try to find the display and auth from a logged in user
                 for proc in psutil.process_iter(['pid', 'environ']):
                     try:
-                        if proc.info['environ'].get('DISPLAY'):
-                            os.environ['DISPLAY'] = proc.info['environ']['DISPLAY']
+                        env = proc.info['environ']
+                        if env.get('DISPLAY'):
+                            os.environ['DISPLAY'] = env['DISPLAY']
+                            if env.get('XAUTHORITY'):
+                                os.environ['XAUTHORITY'] = env['XAUTHORITY']
                             break
                     except (AttributeError, psutil.NoSuchProcess, psutil.AccessDenied):
                         continue
                 if not os.environ.get('DISPLAY'):
                     os.environ['DISPLAY'] = ':0'  # Fallback to default display
+                    # Try to find XAUTHORITY in common locations
+                    xauth_paths = [
+                        os.path.expanduser('~/.Xauthority'),
+                        '/run/user/1000/gdm/Xauthority',  # Common GDM location
+                        '/var/run/gdm/auth-for-gdm*/database'  # Another common GDM location
+                    ]
+                    for path in xauth_paths:
+                        if os.path.exists(path):
+                            os.environ['XAUTHORITY'] = path
+                            break
 
             ewmh = EWMH()
             win = ewmh.getActiveWindow()
