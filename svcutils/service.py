@@ -125,19 +125,19 @@ else:
     from ewmh import EWMH
 
     def is_fullscreen():
-        if not os.environ.get('DISPLAY'):
-            # Try to find the display from a logged in user
-            for proc in psutil.process_iter(['pid', 'environ']):
-                try:
-                    if proc.info['environ'].get('DISPLAY'):
-                        os.environ['DISPLAY'] = proc.info['environ']['DISPLAY']
-                        break
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-            if not os.environ.get('DISPLAY'):
-                os.environ['DISPLAY'] = ':0'  # Fallback to default display
-
         try:
+            if not os.environ.get('DISPLAY'):
+                # Try to find the display from a logged in user
+                for proc in psutil.process_iter(['pid', 'environ']):
+                    try:
+                        if proc.info['environ'].get('DISPLAY'):
+                            os.environ['DISPLAY'] = proc.info['environ']['DISPLAY']
+                            break
+                    except (AttributeError, psutil.NoSuchProcess, psutil.AccessDenied):
+                        continue
+                if not os.environ.get('DISPLAY'):
+                    os.environ['DISPLAY'] = ':0'  # Fallback to default display
+
             ewmh = EWMH()
             win = ewmh.getActiveWindow()
             if win is None:
