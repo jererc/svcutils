@@ -242,15 +242,15 @@ class ServiceTracker:
 
 class Service:
     def __init__(self, target, work_dir, args=None, kwargs=None,
-                 run_delta=60, max_cpu_percent=None, daemon_loop_delta=60,
+                 run_delta=60, daemon_loop_delta=60, max_cpu_percent=None,
                  **tracker_args):
         self.target = target
         self.args = args or ()
         self.kwargs = kwargs or {}
         self.work_dir = work_dir
         self.run_delta = run_delta
-        self.max_cpu_percent = max_cpu_percent
         self.daemon_loop_delta = daemon_loop_delta
+        self.max_cpu_percent = max_cpu_percent
         self.tracker = ServiceTracker(work_dir, **tracker_args)
         self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
 
