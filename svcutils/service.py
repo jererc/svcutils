@@ -266,10 +266,10 @@ class Service:
                 return False
         except Exception:
             logger.exception('failed to check fullscreen')
-            if (self.max_cpu_percent and
-                    psutil.cpu_percent(interval=1) > self.max_cpu_percent):
-                logger.info(f'cpu usage is greater than {self.max_cpu_percent}%')
-                return False
+        if (self.max_cpu_percent and psutil.cpu_percent(interval=1)
+                > self.max_cpu_percent):
+            logger.info(f'cpu usage is greater than {self.max_cpu_percent}%')
+            return False
         return True
 
     def _attempt_run(self):
