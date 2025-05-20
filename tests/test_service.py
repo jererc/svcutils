@@ -207,23 +207,41 @@ class TargetTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
         makedirs(WORK_DIR)
+        self.work_dir = WORK_DIR
 
-    def test_run_once(self):
-        self.res = False
+    def test_target(self):
+        self.wrapper_run = False
+        self.target_run = False
+        self.result = None
 
-        def target(p1, p2, p3=None):
-            print((p1, p2, p3))
-            self.res = p1 == 1 and p2 == 2 and p3 == 3
+        def wrapper(*args, **kwargs):
+            print(f'{args=} {kwargs=}')
+            self.wrapper_run = True
 
-        svc = module.Service(
-            target=target,
-            args=(1, 2),
-            kwargs={'p3': 3},
-            work_dir=WORK_DIR,
-            run_delta=1,
+            def target(p1, p2):
+                self.target_run = True
+                return p1, p2
+
+            self.result = target(*args, **kwargs)
+            return self.result
+
+        se = module.Service(
+            target=wrapper,
+            args=('123',),
+            kwargs={'p2': '456'},
+            work_dir=self.work_dir,
         )
-        svc.run_once()
-        self.assertTrue(self.res)
+        with patch.object(se, '_must_run', return_value=False):
+            se.run_once()
+        self.assertFalse(self.wrapper_run)
+        self.assertFalse(self.target_run)
+        self.assertEqual(self.result, None)
+
+        with patch.object(se, '_must_run', return_value=True):
+            se.run_once()
+        self.assertTrue(self.wrapper_run)
+        self.assertTrue(self.target_run)
+        self.assertEqual(self.result, ('123', '456'))
 
 
 class ServiceTestCase(unittest.TestCase):
