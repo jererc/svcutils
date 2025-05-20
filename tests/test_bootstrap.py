@@ -71,9 +71,9 @@ class BootstrapperTestCase(unittest.TestCase):
         dirname = f'.{self.args["name"]}'
         self.assertEqual(self.bs.venv_dir, os.path.join(os.path.expanduser('~'),
             dirname, module.VENV_DIRNAME))
-        bin_dirname = 'Scripts' if os.name == 'nt' else 'bin'
-        pip_filename = 'pip.exe' if os.name == 'nt' else 'pip'
-        py_filename = 'pythonw.exe' if os.name == 'nt' else 'python'
+        bin_dirname = 'Scripts' if sys.platform == 'win32' else 'bin'
+        pip_filename = 'pip.exe' if sys.platform == 'win32' else 'pip'
+        py_filename = 'pythonw.exe' if sys.platform == 'win32' else 'python'
         self.assertEqual(self.bs.pip_path, os.path.join(os.path.expanduser('~'),
             dirname, module.VENV_DIRNAME, bin_dirname, pip_filename))
         self.assertEqual(self.bs.svc_py_path, os.path.join(os.path.expanduser('~'),
@@ -86,7 +86,7 @@ class BootstrapperTestCase(unittest.TestCase):
                 patch.object(self.bs, '_setup_linux_crontab'
                     ) as mock__setup_linux_crontab:
             self.bs.setup_task()
-            if os.name == 'nt':
+            if sys.platform == 'win32':
                 cmd = mock__setup_windows_task.call_args_list[0].kwargs['cmd']
             else:
                 cmd = mock__setup_linux_crontab.call_args_list[0].kwargs['cmd']

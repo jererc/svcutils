@@ -8,22 +8,22 @@ import urllib.request
 
 HOME_DIR = os.path.expanduser('~')
 ADMIN_DIR = {
-    'nt': os.getenv('WINDIR', r'C:\Windows'),
-    'posix': '/root',
-}[os.name]
+    'win32': os.getenv('WINDIR', r'C:\Windows'),
+    'linux': '/root',
+}[sys.platform]
 APP_DATA_DIR = {
-    'nt': os.getenv('APPDATA', os.path.join(HOME_DIR, 'AppData', 'Roaming')),
-    'posix': os.path.join(os.getenv('HOME', HOME_DIR), '.local', 'share'),
-}[os.name]
+    'win32': os.getenv('APPDATA', os.path.join(HOME_DIR, 'AppData', 'Roaming')),
+    'linux': os.path.join(os.getenv('HOME', HOME_DIR), '.local', 'share'),
+}[sys.platform]
 APP_DIR = {
-    'nt': os.path.join(APP_DATA_DIR, r'Microsoft\Windows\Start Menu\Programs'),
-    'posix': os.path.join(APP_DATA_DIR, 'applications'),
-}[os.name]
+    'win32': os.path.join(APP_DATA_DIR, r'Microsoft\Windows\Start Menu\Programs'),
+    'linux': os.path.join(APP_DATA_DIR, 'applications'),
+}[sys.platform]
 VENV_DIRNAME = 'venv'
-VENV_BIN_DIRNAME = {'nt': 'Scripts', 'posix': 'bin'}[os.name]
-VENV_PIP_PATH = {'nt': 'pip.exe', 'posix': 'pip'}[os.name]
-VENV_PY_PATH = {'nt': 'python.exe', 'posix': 'python'}[os.name]
-VENV_SVC_PY_PATH = {'nt': 'pythonw.exe', 'posix': 'python'}[os.name]
+VENV_BIN_DIRNAME = {'win32': 'Scripts', 'linux': 'bin'}[sys.platform]
+VENV_PIP_PATH = {'win32': 'pip.exe', 'linux': 'pip'}[sys.platform]
+VENV_PY_PATH = {'win32': 'python.exe', 'linux': 'python'}[sys.platform]
+VENV_SVC_PY_PATH = {'win32': 'pythonw.exe', 'linux': 'python'}[sys.platform]
 
 
 def get_valid_cwd():
@@ -196,7 +196,7 @@ objShortcut.Save
         self.setup_venv()
         self._download_assets()
         cmd = self._get_cmd()
-        if os.name == 'nt':
+        if sys.platform == 'win32':
             file = os.path.join(APP_DIR, f'{self.name}.lnk')
             self._create_windows_shortcut(
                 target_path=cmd[0],
@@ -219,7 +219,7 @@ objShortcut.Save
         self.setup_venv()
         self._download_assets()
         cmd = ' '.join(self._get_cmd())
-        if os.name == 'nt':
+        if sys.platform == 'win32':
             self._setup_windows_task(cmd=cmd, task_name=self.name)
         else:
             self._setup_linux_crontab(cmd=cmd)

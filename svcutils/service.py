@@ -118,44 +118,51 @@ def _get_display_env(keys=None):
     return res
 
 
-if sys.platform == 'win32':
+def _is_fullscreen_windows(tolerance=2):
     import win32api
     import win32con
     import win32gui
 
-    def is_fullscreen(tolerance=2):
-        hwnd = win32gui.GetForegroundWindow()
-        if not hwnd or not win32gui.IsWindowVisible(hwnd) or win32gui.IsIconic(hwnd):
-            return False
-        win_left, win_top, win_right, win_bottom = win32gui.GetWindowRect(hwnd)
-        hmon = win32api.MonitorFromWindow(hwnd, win32con.MONITOR_DEFAULTTONEAREST)
-        mon_info = win32api.GetMonitorInfo(hmon)
-        mon_left, mon_top, mon_right, mon_bottom = mon_info["Monitor"]
-        res = (
-            abs(win_left - mon_left) <= tolerance and
-            abs(win_top - mon_top) <= tolerance and
-            abs(win_right - mon_right) <= tolerance and
-            abs(win_bottom - mon_bottom) <= tolerance
-        )
-        if res:
-            logger.info(f'window "{win32gui.GetWindowText(hwnd)}" is fullscreen')
-        return res
-else:
+    hwnd = win32gui.GetForegroundWindow()
+    if not hwnd or not win32gui.IsWindowVisible(hwnd) or win32gui.IsIconic(hwnd):
+        return False
+    win_left, win_top, win_right, win_bottom = win32gui.GetWindowRect(hwnd)
+    hmon = win32api.MonitorFromWindow(hwnd, win32con.MONITOR_DEFAULTTONEAREST)
+    mon_info = win32api.GetMonitorInfo(hmon)
+    mon_left, mon_top, mon_right, mon_bottom = mon_info["Monitor"]
+    res = (
+        abs(win_left - mon_left) <= tolerance and
+        abs(win_top - mon_top) <= tolerance and
+        abs(win_right - mon_right) <= tolerance and
+        abs(win_bottom - mon_bottom) <= tolerance
+    )
+    if res:
+        logger.info(f'window "{win32gui.GetWindowText(hwnd)}" is fullscreen')
+    return res
+
+
+def _is_fullscreen_linux():
     from ewmh import EWMH
 
-    def is_fullscreen():
-        if not os.environ.get('DISPLAY'):
-            os.environ.update(_get_display_env())
-        ewmh = EWMH()
-        win = ewmh.getActiveWindow()
-        if win is None:
-            return False
-        states = ewmh.getWmState(win, str) or []
-        res = "_NET_WM_STATE_FULLSCREEN" in states
-        if res:
-            title = ewmh.getWmName(win).decode('utf-8')   # or win.get_wm_name()
-            logger.info(f'window "{title}" is fullscreen')
-        return res
+    if not os.environ.get('DISPLAY'):
+        os.environ.update(_get_display_env())
+    ewmh = EWMH()
+    win = ewmh.getActiveWindow()
+    if win is None:
+        return False
+    states = ewmh.getWmState(win, str) or []
+    res = "_NET_WM_STATE_FULLSCREEN" in states
+    if res:
+        title = ewmh.getWmName(win).decode('utf-8')   # or win.get_wm_name()
+        logger.info(f'window "{title}" is fullscreen')
+    return res
+
+
+def is_fullscreen():
+    if sys.platform == 'win32':
+        return _is_fullscreen_windows()
+    else:
+        return _is_fullscreen_linux()
 
 
 class ConfigNotFound(Exception):
@@ -302,12 +309,12 @@ class Service:
 
 
 class Notifier:
-    def _send_nt(self, title, body, app_name=None, on_click=None):
+    def _send_windows(self, title, body, app_name=None, on_click=None):
         from win11toast import notify
         notify(title=title, body=body, app_id=app_name,
             on_click=on_click)
 
-    def _send_posix(self, title, body, app_name=None, on_click=None):
+    def _send_linux(self, title, body, app_name=None, on_click=None):
         env = os.environ.copy()
         if not env.get('DISPLAY'):
             env.update(_get_display_env())
@@ -320,9 +327,7 @@ class Notifier:
 
     def send(self, *args, **kwargs):
         try:
-            {
-                'nt': self._send_nt,
-                'posix': self._send_posix,
-            }[os.name](*args, **kwargs)
+            {'win32': self._send_windows,
+             'linux': self._send_linux}[sys.platform](*args, **kwargs)
         except Exception:
             logger.exception('failed to send notification')
