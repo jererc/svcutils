@@ -10,8 +10,6 @@ import subprocess
 import sys
 import time
 
-import psutil
-
 from svcutils.bootstrap import get_app_dir, get_work_dir
 
 
@@ -59,6 +57,16 @@ def get_file_mtime(x):
     return os.stat(x).st_mtime
 
 
+def pid_exists(pid):
+    import psutil
+    return psutil.pid_exists(pid)
+
+
+def cpu_percent(interval=1):
+    import psutil
+    return psutil.cpu_percent(interval=interval)
+
+
 def single_instance(path):
     lockfile = os.path.join(path, LOCK_FILENAME)
 
@@ -71,7 +79,7 @@ def single_instance(path):
                         old_pid = int(fd.read().strip())
                     except ValueError:
                         old_pid = None
-                if old_pid and psutil.pid_exists(old_pid):
+                if old_pid and pid_exists(old_pid):
                     raise SystemExit(f'Another instance (PID={old_pid}) '
                         'is running. Exiting.')
                 else:
@@ -90,6 +98,7 @@ def single_instance(path):
 
 
 def _get_display_env(keys=None):
+    import psutil
     if keys is None:
         keys = ['DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS']
     for proc in psutil.process_iter(['pid', 'environ']):
@@ -122,7 +131,6 @@ def _is_fullscreen_windows(tolerance=2):
     import win32api
     import win32con
     import win32gui
-
     hwnd = win32gui.GetForegroundWindow()
     if not hwnd or not win32gui.IsWindowVisible(hwnd) or win32gui.IsIconic(hwnd):
         return False
@@ -143,7 +151,6 @@ def _is_fullscreen_windows(tolerance=2):
 
 def _is_fullscreen_linux():
     from ewmh import EWMH
-
     if not os.environ.get('DISPLAY'):
         os.environ.update(_get_display_env())
     ewmh = EWMH()
@@ -273,8 +280,7 @@ class Service:
                 return False
         except Exception:
             logger.exception('failed to check fullscreen')
-        if (self.max_cpu_percent and psutil.cpu_percent(interval=1)
-                > self.max_cpu_percent):
+        if (self.max_cpu_percent and cpu_percent() > self.max_cpu_percent):
             logger.info(f'cpu usage is greater than {self.max_cpu_percent}%')
             return False
         return True
