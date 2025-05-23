@@ -62,11 +62,6 @@ def pid_exists(pid):
     return psutil.pid_exists(pid)
 
 
-def cpu_percent(interval=1):
-    import psutil
-    return psutil.cpu_percent(interval=interval)
-
-
 def single_instance(path):
     lockfile = os.path.join(path, LOCK_FILENAME)
 
@@ -166,10 +161,21 @@ def _is_fullscreen_linux():
 
 
 def is_fullscreen():
-    if sys.platform == 'win32':
-        return _is_fullscreen_windows()
-    else:
-        return _is_fullscreen_linux()
+    try:
+        return {'win32': _is_fullscreen_windows,
+                'linux': _is_fullscreen_linux}[sys.platform]()
+    except Exception:
+        logger.exception('failed to check fullscreen')
+        return False
+
+
+def check_cpu_percent(max_percent, interval=1):
+    if max_percent:
+        import psutil
+        if psutil.cpu_percent(interval=interval) > max_percent:
+            logger.info(f'cpu usage is greater than {max_percent}%')
+            return False
+    return True
 
 
 class ConfigNotFound(Exception):
@@ -275,13 +281,9 @@ class Service:
             return False
         if not self.tracker.check():
             return False
-        try:
-            if is_fullscreen():
-                return False
-        except Exception:
-            logger.exception('failed to check fullscreen')
-        if (self.max_cpu_percent and cpu_percent() > self.max_cpu_percent):
-            logger.info(f'cpu usage is greater than {self.max_cpu_percent}%')
+        if is_fullscreen():
+            return False
+        if not check_cpu_percent(self.max_cpu_percent):
             return False
         return True
 
