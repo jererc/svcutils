@@ -25,16 +25,11 @@ def remove_path(path):
         os.remove(path)
 
 
-def makedirs(x):
-    if not os.path.exists(x):
-        os.makedirs(x)
-
-
 class ConfigTestCase(unittest.TestCase):
     def test_1(self):
         self.assertRaises(Exception, module.Config, 'invalid')
 
-        makedirs(WORK_DIR)
+        os.makedirs(WORK_DIR, exist_ok=True)
         config_file = os.path.join(WORK_DIR, 'config.py')
         with open(config_file, 'w') as fd:
             fd.write("""invalid""")
@@ -55,7 +50,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
     def setUp(self):
         self.target = int
         self.work_dir = WORK_DIR
-        makedirs(WORK_DIR)
+        os.makedirs(WORK_DIR, exist_ok=True)
 
     def test_params(self):
         st = module.ServiceTracker(self.work_dir)
@@ -205,7 +200,7 @@ class MustRunTestCase(unittest.TestCase):
 class TargetTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        makedirs(WORK_DIR)
+        os.makedirs(WORK_DIR, exist_ok=True)
         self.work_dir = WORK_DIR
 
     def test_target(self):
@@ -246,7 +241,7 @@ class TargetTestCase(unittest.TestCase):
 class ServiceTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        makedirs(WORK_DIR)
+        os.makedirs(WORK_DIR, exist_ok=True)
 
     def test_run_once(self):
         self.attempts = 0
@@ -332,7 +327,7 @@ class ServiceTestCase(unittest.TestCase):
 class RuntimeTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        makedirs(WORK_DIR)
+        os.makedirs(WORK_DIR, exist_ok=True)
 
     def test_offline(self):
         self.runs = 0
@@ -382,7 +377,7 @@ class RuntimeTestCase(unittest.TestCase):
 class SingleInstanceTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        makedirs(WORK_DIR)
+        os.makedirs(WORK_DIR, exist_ok=True)
         self.lock_file = os.path.join(WORK_DIR, module.LOCK_FILENAME)
         self.pid_file = os.path.join(WORK_DIR, 'pids.txt')
 

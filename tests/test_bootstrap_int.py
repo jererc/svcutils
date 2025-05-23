@@ -17,15 +17,10 @@ def remove_path(path):
         os.remove(path)
 
 
-def makedirs(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-
 class CrontabTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        makedirs(WORK_DIR)
+        os.makedirs(WORK_DIR, exist_ok=True)
         self.name = '__TEST__'
 
     def _read_crontab(self):
@@ -64,7 +59,7 @@ class CrontabTestCase(unittest.TestCase):
 class DownloadAssetsTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        makedirs(WORK_DIR)
+        os.makedirs(WORK_DIR, exist_ok=True)
         self.name = '__TEST__'
         self.bs = module.Bootstrapper(
             name=self.name,

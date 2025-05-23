@@ -27,8 +27,7 @@ def setup_logging(logger, path, name, max_size=1024000):
         stdout_handler.setFormatter(formatter)
         stdout_handler.setLevel(logging.DEBUG)
         logger.addHandler(stdout_handler)
-    if not os.path.exists(path):
-        os.makedirs(path)
+    os.makedirs(path, exist_ok=True)
     file_handler = RotatingFileHandler(
         os.path.join(path, f'{name}.log'),
         mode='a', maxBytes=max_size, backupCount=0,

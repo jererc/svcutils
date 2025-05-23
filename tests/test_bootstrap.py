@@ -19,11 +19,6 @@ def remove_path(path):
         os.remove(path)
 
 
-def makedirs(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-
 def get_bs(*args, **kwargs):
     with patch('os.makedirs'):
         return module.Bootstrapper(*args, **kwargs)
@@ -54,7 +49,7 @@ class CrontabTestCase(unittest.TestCase):
 class BootstrapperTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        makedirs(WORK_DIR)
+        os.makedirs(WORK_DIR, exist_ok=True)
         self.args = {
             'name': NAME,
             'cmd_args': ['module.main', 'arg', '--flag'],

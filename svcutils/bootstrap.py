@@ -27,20 +27,15 @@ def get_valid_cwd():
     return path
 
 
-def makedirs(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-
 def get_app_dir(name):
     path = os.path.join(APP_DATA_DIR, name)
-    makedirs(path)
+    os.makedirs(path, exist_ok=True)
     return path
 
 
 def get_work_dir(name):
     path = os.path.join(HOME_DIR, f'.{name}')
-    makedirs(path)
+    os.makedirs(path, exist_ok=True)
     return path
 
 
@@ -154,7 +149,7 @@ class Bootstrapper:
 
     def _create_linux_shortcut(self, name, cmd, shortcut_path,
             description=''):
-        makedirs(os.path.dirname(shortcut_path))
+        os.makedirs(os.path.dirname(shortcut_path), exist_ok=True)
         content = f"""[Desktop Entry]
 Type=Application
 Name={name}
