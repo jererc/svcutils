@@ -239,7 +239,7 @@ class ServiceTracker:
             return
         now = time.time()
         self.data = [r for r in self.data if r[0] > now - self.check_delta] \
-            + [(int(now), int(is_online()))]
+            + [(int(now), int(is_online()) if self.requires_online else -1)]
         with open(self.file, 'w') as fd:
             json.dump(self.data, fd)
 
@@ -255,7 +255,8 @@ class ServiceTracker:
             / self.uptime_precision))))
         res = values >= expected
         if not res:
-            logger.info(f'uptime is less than {self.min_uptime} seconds')
+            logger.info(f'uptime is less than {self.min_uptime} seconds '
+                f'(requires_online={self.requires_online})')
         return res
 
 
