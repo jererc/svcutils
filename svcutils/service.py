@@ -275,9 +275,7 @@ class Service:
         self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
 
     def _must_run(self):
-        run_ts = self.run_file.get_ts()
-        now_ts = time.time()
-        if now_ts < run_ts + self.run_delta:
+        if time.time() < self.run_file.get_ts() + self.run_delta:
             return False
         if not self.tracker.check():
             return False
