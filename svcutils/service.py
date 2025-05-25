@@ -224,9 +224,8 @@ class ServiceTracker:
         self.data = self._load()
 
     def _get_check_delta(self):
-        if not self.min_uptime:
-            return None
-        return self.min_uptime + self.uptime_precision
+        return (self.min_uptime + self.uptime_precision
+                if self.min_uptime else None)
 
     def _load(self):
         if not os.path.exists(self.file):
@@ -275,7 +274,11 @@ class Service:
         self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
 
     def _must_run(self):
-        if time.time() < self.run_file.get_ts() + self.run_delta:
+        run_delta = self.run_file.get_ts() + self.run_delta - time.time()
+        if self.tracker.check_delta and run_delta > self.tracker.check_delta:
+            return False
+        self.tracker.update()
+        if run_delta > 0:
             return False
         if not self.tracker.check():
             return False
@@ -287,7 +290,6 @@ class Service:
 
     def _attempt_run(self):
         try:
-            self.tracker.update()
             if self._must_run():
                 try:
                     self.target(*self.args, **self.kwargs)

@@ -151,20 +151,16 @@ class MustRunTestCase(unittest.TestCase):
         self.work_dir = WORK_DIR
 
     def test_run(self):
-        with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-            mock_get_ts.return_value = time.time() - 1
-            mock_cpu_percent.return_value = 1
+        with patch.object(module.RunFile, 'get_ts',
+                          return_value=time.time() - 1):
             self.assertFalse(module.Service(
                 target=self.target,
                 work_dir=self.work_dir,
                 run_delta=10,
             )._must_run())
 
-        with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-            mock_get_ts.return_value = time.time() - 11
-            mock_cpu_percent.return_value = 1
+        with patch.object(module.RunFile, 'get_ts',
+                          return_value=time.time() - 11):
             self.assertTrue(module.Service(
                 target=self.target,
                 work_dir=self.work_dir,
@@ -174,10 +170,10 @@ class MustRunTestCase(unittest.TestCase):
     def test_cpu_percent(self):
         with patch.object(module, 'is_fullscreen', return_value=False):
 
-            with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                    patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-                mock_get_ts.return_value = time.time() - 11
-                mock_cpu_percent.return_value = 20
+            with patch.object(module.RunFile, 'get_ts',
+                              return_value=time.time() - 11), \
+                    patch.object(psutil, 'cpu_percent',
+                                 return_value=20):
                 self.assertFalse(module.Service(
                     target=self.target,
                     work_dir=self.work_dir,
@@ -185,10 +181,10 @@ class MustRunTestCase(unittest.TestCase):
                     max_cpu_percent=10,
                 )._must_run())
 
-            with patch.object(module.RunFile, 'get_ts') as mock_get_ts, \
-                    patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-                mock_get_ts.return_value = time.time() - 11
-                mock_cpu_percent.return_value = 1
+            with patch.object(module.RunFile, 'get_ts',
+                              return_value=time.time() - 11), \
+                    patch.object(psutil, 'cpu_percent',
+                                 return_value=1):
                 self.assertTrue(module.Service(
                     target=self.target,
                     work_dir=self.work_dir,
@@ -256,12 +252,10 @@ class ServiceTestCase(unittest.TestCase):
             run_delta=1,
         )
         end_ts = time.time() + 3
-        with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-            mock_cpu_percent.return_value = 1
-            while time.time() < end_ts:
-                svc.run_once()
-                self.attempts += 1
-                time.sleep(.2)
+        while time.time() < end_ts:
+            svc.run_once()
+            self.attempts += 1
+            time.sleep(.2)
         print(f'{self.attempts=}, {self.runs=}')
         self.assertTrue(self.attempts >= 10)
         self.assertTrue(self.runs <= 4)
@@ -275,15 +269,12 @@ class ServiceTestCase(unittest.TestCase):
             raise Exception('failed')
 
         def run():
-            with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-                mock_cpu_percent.return_value = 1
-                svc = module.Service(
-                    target=target,
-                    work_dir=WORK_DIR,
-                    run_delta=1,
-                    daemon_loop_delta=.2,
-                )
-                svc.run()
+            module.Service(
+                target=target,
+                work_dir=WORK_DIR,
+                run_delta=1,
+                daemon_loop_delta=.2,
+            ).run()
 
         proc = Process(target=run)
         proc.start()
@@ -303,15 +294,12 @@ class ServiceTestCase(unittest.TestCase):
                 fd.write('call\n')
 
         def run():
-            with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-                mock_cpu_percent.return_value = 1
-                svc = module.Service(
-                    target=target,
-                    work_dir=WORK_DIR,
-                    run_delta=1,
-                    daemon_loop_delta=.2,
-                )
-                svc.run()
+            module.Service(
+                target=target,
+                work_dir=WORK_DIR,
+                run_delta=1,
+                daemon_loop_delta=.2,
+            ).run()
 
         proc = Process(target=run)
         proc.start()
@@ -342,10 +330,7 @@ class RuntimeTestCase(unittest.TestCase):
             min_uptime=5,
             requires_online=True,
         )
-        with patch.object(psutil, 'cpu_percent') as mock_cpu_percent, \
-                patch.object(module, 'is_online') as mock_is_online:
-            mock_cpu_percent.return_value = 1
-            mock_is_online.return_value = False
+        with patch.object(module, 'is_online', return_value=False):
             end_ts = time.time() + 7
             while time.time() < end_ts:
                 svc.run_once()
@@ -365,12 +350,10 @@ class RuntimeTestCase(unittest.TestCase):
             min_uptime=5,
             requires_online=True,
         )
-        with patch.object(psutil, 'cpu_percent') as mock_cpu_percent:
-            mock_cpu_percent.return_value = 1
-            end_ts = time.time() + 7
-            while time.time() < end_ts:
-                svc.run_once()
-                time.sleep(1)
+        end_ts = time.time() + 7
+        while time.time() < end_ts:
+            svc.run_once()
+            time.sleep(1)
         self.assertTrue(self.runs)
 
 
