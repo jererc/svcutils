@@ -288,9 +288,9 @@ class Service:
             return False
         return True
 
-    def _attempt_run(self):
+    def _attempt_run(self, force=False):
         try:
-            if self._must_run():
+            if force or self._must_run():
                 try:
                     self.target(*self.args, **self.kwargs)
                 finally:
@@ -298,10 +298,10 @@ class Service:
         except Exception:
             logger.exception('service failed')
 
-    def run_once(self):
+    def run_once(self, force=False):
         @single_instance(self.work_dir)
         def run():
-            self._attempt_run()
+            self._attempt_run(force)
 
         run()
 
