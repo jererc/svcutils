@@ -70,8 +70,7 @@ class Bootstrapper:
     def setup_venv(self):
         requires_init = not os.path.exists(self.pip_path)
         if requires_init:
-            subprocess.check_call([sys.executable, '-m', 'venv',
-                self.venv_dir])   # requires python3-venv
+            subprocess.check_call([sys.executable, '-m', 'venv', self.venv_dir])   # requires python3-venv
             print(f'created virtualenv: {self.venv_dir}')
         if self.install_requires:
             base_cmd = [self.pip_path, 'install']
@@ -113,8 +112,8 @@ class Bootstrapper:
                 return '0 0 * * *'
 
     def _setup_linux_crontab(self, cmd):
-        res = subprocess.run(['crontab', '-l'],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        res = subprocess.run(['crontab', '-l'], stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, text=True)
         current_crontab = res.stdout if res.returncode == 0 else ''
         new_job = f'{self._generate_crontab_schedule()} {cmd}\n'
         updated_crontab = ''
@@ -127,17 +126,16 @@ class Bootstrapper:
                 updated_crontab += f'{line}\n'
         if not job_found:
             updated_crontab += new_job
-        res = subprocess.run(['crontab', '-'], input=updated_crontab,
-            text=True)
+        res = subprocess.run(['crontab', '-'], input=updated_crontab, text=True)
         if res.returncode != 0:
             raise SystemExit('Error: failed to update crontab')
         print(f'created crontab job:\n{new_job.strip()}')
 
     def _setup_windows_task(self, cmd, task_name):
         if ctypes.windll.shell32.IsUserAnAdmin() == 0:
-            raise SystemExit('Error: must run as admin '
-                'to update scheduled tasks')
-        subprocess.check_call(['schtasks', '/create',
+            raise SystemExit('Error: must run as admin to update scheduled tasks')
+        subprocess.check_call([
+            'schtasks', '/create',
             '/tn', task_name,
             '/tr', cmd,
             '/sc', 'minute',
@@ -148,7 +146,7 @@ class Bootstrapper:
         print(f'created scheduled task {task_name} with cmd:\n{cmd}')
 
     def _create_linux_shortcut(self, name, cmd, shortcut_path,
-            description=''):
+                               description=''):
         os.makedirs(os.path.dirname(shortcut_path), exist_ok=True)
         content = f"""[Desktop Entry]
 Type=Application
@@ -162,7 +160,7 @@ Comment={description}
         subprocess.check_call(['chmod', '+x', shortcut_path])
 
     def _create_windows_shortcut(self, target_path, shortcut_path,
-            arguments='', working_dir='', description=''):
+                                 arguments='', working_dir='', description=''):
         if not working_dir:
             working_dir = os.path.dirname(target_path)
         vbs_content = f"""Set objShell = WScript.CreateObject("WScript.Shell")

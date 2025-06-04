@@ -74,8 +74,7 @@ def single_instance(path):
                     except ValueError:
                         old_pid = None
                 if old_pid and pid_exists(old_pid):
-                    raise SystemExit(f'Another instance (PID={old_pid}) '
-                        'is running. Exiting.')
+                    raise SystemExit(f'Another instance (PID={old_pid}) is running. Exiting.')
                 else:
                     logger.warning('Found a stale lockfile. Removing it.')
                     os.remove(lockfile)
@@ -247,15 +246,15 @@ class ServiceTracker:
             return True
         now = time.time()
         tds = [int(t - now) for t, o in self.data
-            if t > now - self.check_delta and (o or not self.requires_online)]
+               if t > now - self.check_delta and (o or not self.requires_online)]
         values = {int((r + self.check_delta) // self.uptime_precision)
-            for r in tds}
+                  for r in tds}
         expected = set(range(0, int(ceil(self.check_delta
-            / self.uptime_precision))))
+                                         / self.uptime_precision))))
         res = values >= expected
         if not res:
             logger.info(f'uptime is less than {self.min_uptime} seconds '
-                f'(requires_online={self.requires_online})')
+                        f'(requires_online={self.requires_online})')
         return res
 
 
@@ -319,8 +318,7 @@ class Service:
 class Notifier:
     def _send_windows(self, title, body, app_name=None, on_click=None):
         from win11toast import notify
-        notify(title=title, body=body, app_id=app_name,
-            on_click=on_click)
+        notify(title=title, body=body, app_id=app_name, on_click=on_click)
 
     def _send_linux(self, title, body, app_name=None, on_click=None):
         env = os.environ.copy()
