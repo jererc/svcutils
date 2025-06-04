@@ -63,8 +63,9 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertEqual(st.uptime_precision, 180)
         self.assertEqual(st.check_delta, 181)
 
-        st = module.ServiceTracker(self.work_dir, min_uptime=60,
-            update_delta=10)
+        st = module.ServiceTracker(self.work_dir,
+                                   min_uptime=60,
+                                   update_delta=10)
         self.assertEqual(st.uptime_precision, 15)
         self.assertEqual(st.check_delta, 75)
 
@@ -91,8 +92,10 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertTrue(se.tracker.requires_online)
 
     def test_low_uptime(self):
-        st = module.ServiceTracker(self.work_dir, min_uptime=60,
-            requires_online=False, update_delta=120)
+        st = module.ServiceTracker(self.work_dir,
+                                   min_uptime=60,
+                                   requires_online=False,
+                                   update_delta=120)
 
         now = time.time()
         st.data = [
@@ -109,8 +112,10 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertTrue(st.check())
 
     def test_check(self):
-        st = module.ServiceTracker(self.work_dir, min_uptime=300,
-            requires_online=False, update_delta=120)
+        st = module.ServiceTracker(self.work_dir,
+                                   min_uptime=300,
+                                   requires_online=False,
+                                   update_delta=120)
 
         now = time.time()
         st.data = [

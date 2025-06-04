@@ -29,7 +29,7 @@ class CrontabTestCase(unittest.TestCase):
 
     def test_1(self):
         bs = module.Bootstrapper(name=self.name,
-            cmd_args=['module.main', 'arg1', '--flag1'])
+                                 cmd_args=['module.main', 'arg1', '--flag1'])
         cmd = ' '.join(bs._get_cmd())
         bs._setup_linux_crontab(cmd)
         res = self._read_crontab()
@@ -38,7 +38,7 @@ class CrontabTestCase(unittest.TestCase):
         self.assertTrue(cmd in res[0])
 
         bs = module.Bootstrapper(name=self.name,
-            cmd_args=['module.main', 'arg2', '--flag1'])
+                                 cmd_args=['module.main', 'arg2', '--flag1'])
         cmd = ' '.join(bs._get_cmd())
         bs._setup_linux_crontab(cmd)
         res = self._read_crontab()
@@ -47,7 +47,7 @@ class CrontabTestCase(unittest.TestCase):
         self.assertTrue(cmd in res[0])
 
         bs = module.Bootstrapper(name=self.name,
-            cmd_args=['module.main', 'arg2', '--flag2'])
+                                 cmd_args=['module.main', 'arg2', '--flag2'])
         cmd = ' '.join(bs._get_cmd())
         bs._setup_linux_crontab(cmd)
         res = self._read_crontab()

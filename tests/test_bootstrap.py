@@ -1,4 +1,3 @@
-from glob import glob
 import os
 import shutil
 import sys
@@ -26,8 +25,9 @@ def get_bs(*args, **kwargs):
 
 class CrontabTestCase(unittest.TestCase):
     def _get_bs(self, schedule_minutes):
-        return get_bs(name=NAME, cmd_args=['main'],
-            schedule_minutes=schedule_minutes)
+        return get_bs(name=NAME,
+                      cmd_args=['main'],
+                      schedule_minutes=schedule_minutes)
 
     def test_1(self):
         bs = self._get_bs(schedule_minutes=1)
@@ -65,22 +65,23 @@ class BootstrapperTestCase(unittest.TestCase):
 
     def test_attrs(self):
         dirname = f'.{self.args["name"]}'
-        self.assertEqual(self.bs.venv_dir, os.path.join(os.path.expanduser('~'),
-            dirname, module.VENV_DIRNAME))
+        self.assertEqual(self.bs.venv_dir,
+                         os.path.join(os.path.expanduser('~'),
+                                      dirname, module.VENV_DIRNAME))
         bin_dirname = 'Scripts' if sys.platform == 'win32' else 'bin'
         pip_filename = 'pip.exe' if sys.platform == 'win32' else 'pip'
         py_filename = 'pythonw.exe' if sys.platform == 'win32' else 'python'
-        self.assertEqual(self.bs.pip_path, os.path.join(os.path.expanduser('~'),
-            dirname, module.VENV_DIRNAME, bin_dirname, pip_filename))
-        self.assertEqual(self.bs.svc_py_path, os.path.join(os.path.expanduser('~'),
-            dirname, module.VENV_DIRNAME, bin_dirname, py_filename))
+        self.assertEqual(self.bs.pip_path,
+                         os.path.join(os.path.expanduser('~'),
+                                      dirname, module.VENV_DIRNAME, bin_dirname, pip_filename))
+        self.assertEqual(self.bs.svc_py_path,
+                         os.path.join(os.path.expanduser('~'),
+                                      dirname, module.VENV_DIRNAME, bin_dirname, py_filename))
 
     def test_task(self):
         with patch.object(self.bs, 'setup_venv'), \
-                patch.object(self.bs, '_setup_windows_task'
-                    ) as mock__setup_windows_task, \
-                patch.object(self.bs, '_setup_linux_crontab'
-                    ) as mock__setup_linux_crontab:
+                patch.object(self.bs, '_setup_windows_task') as mock__setup_windows_task, \
+                patch.object(self.bs, '_setup_linux_crontab') as mock__setup_linux_crontab:
             self.bs.setup_task()
             if sys.platform == 'win32':
                 cmd = mock__setup_windows_task.call_args_list[0].kwargs['cmd']
