@@ -12,9 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 class WindowsNotifier:
-    def send(self, title, body, app_name=None, on_click=None, **kwargs):
-        from win11toast import notify as _notify
-        _notify(title=title, body=body, app_id=app_name, on_click=on_click)
+    def send(self, title, body, app_name=None, on_click=None, replace_key=None, **kwargs):
+        from win11toast import clear_toast, notify as _notify
+        if replace_key:
+            clear_toast(app_id=app_name, tag=replace_key, group=app_name)
+        _notify(title=title, body=body, app_id=app_name, on_click=on_click,
+                tag=replace_key, group=app_name)
 
 
 class LinuxNotifier:
