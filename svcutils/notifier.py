@@ -17,7 +17,7 @@ class WindowsNotifier:
 
 
 class LinuxNotifier:
-    meta_filename = '.notifier.json'
+    meta_filename = 'notifier.json'
 
     def get_meta(self, work_dir):
         if not work_dir:

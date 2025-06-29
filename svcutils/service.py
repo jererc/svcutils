@@ -6,7 +6,6 @@ from logging.handlers import RotatingFileHandler
 from math import ceil
 import os
 import socket
-import subprocess
 import sys
 import time
 
@@ -313,27 +312,3 @@ class Service:
                 time.sleep(self.daemon_loop_delta)
 
         run()
-
-
-class Notifier:
-    def _send_windows(self, title, body, app_name=None, on_click=None):
-        from win11toast import notify
-        notify(title=title, body=body, app_id=app_name, on_click=on_click)
-
-    def _send_linux(self, title, body, app_name=None, on_click=None):
-        env = os.environ.copy()
-        if not env.get('DISPLAY'):
-            env.update(get_display_env())
-        if on_click:
-            body = f'{body} {on_click}'
-        base_cmd = ['notify-send']
-        if app_name:
-            base_cmd += ['--app-name', app_name]
-        subprocess.check_call(base_cmd + [title, body], env=env)
-
-    def send(self, *args, **kwargs):
-        try:
-            {'win32': self._send_windows,
-             'linux': self._send_linux}[sys.platform](*args, **kwargs)
-        except Exception:
-            logger.exception('failed to send notification')
