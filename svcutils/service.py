@@ -90,7 +90,7 @@ def single_instance(path):
     return decorator
 
 
-def _get_display_env(keys=None):
+def get_display_env(keys=None):
     import psutil
     if keys is None:
         keys = ['DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS']
@@ -145,7 +145,7 @@ def _is_fullscreen_windows(tolerance=2):
 def _is_fullscreen_linux():
     from ewmh import EWMH
     if not os.environ.get('DISPLAY'):
-        os.environ.update(_get_display_env())
+        os.environ.update(get_display_env())
     ewmh = EWMH()
     win = ewmh.getActiveWindow()
     if win is None:
@@ -323,7 +323,7 @@ class Notifier:
     def _send_linux(self, title, body, app_name=None, on_click=None):
         env = os.environ.copy()
         if not env.get('DISPLAY'):
-            env.update(_get_display_env())
+            env.update(get_display_env())
         if on_click:
             body = f'{body} {on_click}'
         base_cmd = ['notify-send']
