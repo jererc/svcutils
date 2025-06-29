@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import logging
 import os
@@ -44,7 +45,7 @@ class LinuxNotifier:
         base_cmd = ['notify-send']
         if app_name:
             base_cmd += ['--app-name', app_name]
-        cmd = base_cmd
+        cmd = deepcopy(base_cmd)
         meta = self.get_meta(work_dir)
         if replace_key:
             cmd += ['--print-id']
