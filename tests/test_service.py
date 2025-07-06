@@ -145,7 +145,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
 class DisplayEnvTestCase(unittest.TestCase):
     def test_display_env(self):
-        res = module._get_display_env()
+        res = module.get_display_env()
         pprint(res)
         self.assertTrue({res[k] for k in ['DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS']})
 

@@ -252,8 +252,8 @@ class ServiceTracker:
                                          / self.uptime_precision))))
         res = values >= expected
         if not res:
-            logger.info(f'uptime is less than {self.min_uptime} seconds '
-                        f'(requires_online={self.requires_online})')
+            logger.info(f'{"online " if self.requires_online else ""}'
+                        f'uptime is less than {self.min_uptime} seconds')
         return res
 
 
