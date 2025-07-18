@@ -235,8 +235,8 @@ class ServiceTracker:
         if not self.check_delta:
             return
         now = time.time()
-        self.data = [r for r in self.data if r[0] > now - self.check_delta] \
-            + [(int(now), int(is_online()) if self.requires_online else -1)]
+        self.data = ([r for r in self.data if r[0] > now - self.check_delta] +
+                     [(int(now), int(is_online()) if self.requires_online else -1)])
         with open(self.file, 'w') as fd:
             json.dump(self.data, fd)
 
