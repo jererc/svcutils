@@ -130,7 +130,7 @@ class ServiceTracker:
 
     def _generate_update_item(self):
         return {
-            'ts': int(time.time()),
+            'ts': time.time(),
             'is_online': is_online() if self.requires_online else None,
             'volume_labels': get_volume_labels() if self.must_check_new_volume else None,
         }

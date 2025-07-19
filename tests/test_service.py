@@ -102,7 +102,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertTrue(st.data)
         data = st.data[-1]
         self.assertIsInstance(data, dict)
-        self.assertIsInstance(data['ts'], int)
+        self.assertIsInstance(data['ts'], float)
         self.assertIsInstance(data['is_online'], bool)
         self.assertIsInstance(data['volume_labels'], list)
 
