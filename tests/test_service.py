@@ -107,31 +107,37 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertIsInstance(data['volume_labels'], list)
 
     def test_check_new_volume(self):
+        now = time.time()
+        last_run_ts = now - 60
+
+        def get_entry(volume_labels, ts=now):
+            return {'ts': ts, 'volume_labels': volume_labels}
+
         st = module.ServiceTracker(self.work_dir, min_uptime=1, must_check_new_volume=False)
-        st.data = [{'volume_labels': ['A']}, {'volume_labels': ['A', 'B']}]
-        self.assertFalse(st.check_new_volume())
+        st.data = [get_entry(['a']), get_entry(['a', 'b'])]
+        self.assertFalse(st.check_new_volume(last_run_ts))
 
         st = module.ServiceTracker(self.work_dir, min_uptime=1, must_check_new_volume=True)
         st.data = []
-        self.assertFalse(st.check_new_volume())
-        st.data = [{'volume_labels': ['a', 'b']}]
-        self.assertFalse(st.check_new_volume())
-        st.data = [{'volume_labels': []}, {'volume_labels': []}]
-        self.assertFalse(st.check_new_volume())
-        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['a', 'b']}]
-        self.assertFalse(st.check_new_volume())
-        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': []}]
-        self.assertFalse(st.check_new_volume())
-        st.data = [{'volume_labels': ['a']}, {'volume_labels': ['a', 'b']}]
-        self.assertTrue(st.check_new_volume())
-        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['b', 'c']}]
-        self.assertTrue(st.check_new_volume())
-        st.data = [{'volume_labels': ['a']}, {'volume_labels': ['a', 'b']}, {'volume_labels': ['a', 'b']}]
-        self.assertTrue(st.check_new_volume())
-        st.data = [{'volume_labels': ['a']}, {'volume_labels': ['a', 'b']}, {'volume_labels': ['a']}]
-        self.assertFalse(st.check_new_volume())
-        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['a']}]
-        self.assertFalse(st.check_new_volume())
+        self.assertFalse(st.check_new_volume(last_run_ts))
+        st.data = [get_entry(['a', 'b'])]
+        self.assertFalse(st.check_new_volume(last_run_ts))
+        st.data = [get_entry([]), get_entry([])]
+        self.assertFalse(st.check_new_volume(last_run_ts))
+        st.data = [get_entry(['a', 'b']), get_entry(['a', 'b'])]
+        self.assertFalse(st.check_new_volume(last_run_ts))
+        st.data = [get_entry(['a', 'b']), get_entry([])]
+        self.assertFalse(st.check_new_volume(last_run_ts))
+        st.data = [get_entry(['a']), get_entry(['a', 'b'])]
+        self.assertTrue(st.check_new_volume(last_run_ts))
+        st.data = [get_entry(['a', 'b']), get_entry(['b', 'c'])]
+        self.assertTrue(st.check_new_volume(last_run_ts))
+        st.data = [get_entry(['a']), get_entry(['a', 'b']), get_entry(['a', 'b'])]
+        self.assertTrue(st.check_new_volume(last_run_ts))
+        st.data = [get_entry(['a']), get_entry(['a', 'b']), get_entry(['a'])]
+        self.assertFalse(st.check_new_volume(last_run_ts))
+        st.data = [get_entry(['a', 'b']), get_entry(['a'])]
+        self.assertFalse(st.check_new_volume(last_run_ts))
 
     def test_low_uptime(self):
         st = module.ServiceTracker(self.work_dir,

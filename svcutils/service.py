@@ -136,15 +136,17 @@ class ServiceTracker:
         }
 
     def update(self, last_run_ts):
-        self.data = [r for r in self.data if r['ts'] > last_run_ts] + [self._get_update_entry()]
+        begin_ts = max(0, last_run_ts - (self.check_delta or 0))
+        self.data = [r for r in self.data if r['ts'] > begin_ts] + [self._get_update_entry()]
         with open(self.file, 'w') as fd:
             json.dump(self.data, fd)
 
-    def check_new_volume(self):
+    def check_new_volume(self, last_run_ts):
         if not self.must_check_new_volume:
             return False
         vls = [set(r['volume_labels']) for r in self.data
-               if r.get('volume_labels') is not None]
+               if r.get('volume_labels') is not None
+               and r['ts'] > last_run_ts]
         if len(vls) < 2:
             return False
         return not vls[-1].issubset(vls[0])
@@ -188,7 +190,7 @@ class Service:
         #         and next_run_delta > self.tracker.check_delta):
         #     return False
         self.tracker.update(last_run_ts)
-        if next_run_delta > 0 and not self.tracker.check_new_volume():
+        if next_run_delta > 0 and not self.tracker.check_new_volume(last_run_ts):
             return False
         if not self.tracker.check_uptime():
             return False
