@@ -5,11 +5,13 @@ import logging
 from logging.handlers import RotatingFileHandler
 from math import ceil
 import os
-import socket
 import sys
 import time
 
-from svcutils.bootstrap import get_app_dir, get_work_dir
+from svcutils.bootstrap import get_app_dir, get_work_dir   # keep in bootstrap, import from service
+from svcutils.utils import (check_cpu_percent, get_file_mtime,
+                            get_volume_labels, is_fullscreen,
+                            is_online, pid_exists)
 
 
 LOCK_FILENAME = '.svc.lock'
@@ -40,25 +42,6 @@ def get_logger(path, name):
     return logger
 
 
-def is_online(host='8.8.8.8', port=53, timeout=3):
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(timeout)
-            s.connect((host, port))
-        return True
-    except OSError:
-        return False
-
-
-def get_file_mtime(x):
-    return os.stat(x).st_mtime
-
-
-def pid_exists(pid):
-    import psutil
-    return psutil.pid_exists(pid)
-
-
 def single_instance(path):
     lockfile = os.path.join(path, LOCK_FILENAME)
 
@@ -86,92 +69,6 @@ def single_instance(path):
                     os.remove(lockfile)
         return wrapper
     return decorator
-
-
-def get_display_env(keys=None):
-    import psutil
-    if keys is None:
-        keys = ['DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS']
-    for proc in psutil.process_iter(['pid', 'environ']):
-        try:
-            env = proc.info['environ'] or {}
-            res = {k: env.get(k) for k in keys}
-            if all(res.values()):
-                return res
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
-            continue
-
-    # Fallback to default display
-    res = {
-        'DISPLAY': ':0',
-        'DBUS_SESSION_BUS_ADDRESS': f'unix:path=/run/user/{os.getuid()}/bus',
-    }
-    xauth_paths = [
-        os.path.expanduser('~/.Xauthority'),
-        f'/run/user/{os.getuid()}/gdm/Xauthority',
-        '/var/run/gdm/auth-for-gdm*/database'
-    ]
-    for path in xauth_paths:
-        if os.path.exists(path):
-            res['XAUTHORITY'] = path
-            break
-    return res
-
-
-def _is_fullscreen_windows(tolerance=2):
-    import win32api
-    import win32con
-    import win32gui
-    hwnd = win32gui.GetForegroundWindow()
-    if not hwnd or not win32gui.IsWindowVisible(hwnd) or win32gui.IsIconic(hwnd):
-        return False
-    win_left, win_top, win_right, win_bottom = win32gui.GetWindowRect(hwnd)
-    hmon = win32api.MonitorFromWindow(hwnd, win32con.MONITOR_DEFAULTTONEAREST)
-    mon_info = win32api.GetMonitorInfo(hmon)
-    mon_left, mon_top, mon_right, mon_bottom = mon_info["Monitor"]
-    res = (
-        abs(win_left - mon_left) <= tolerance and
-        abs(win_top - mon_top) <= tolerance and
-        abs(win_right - mon_right) <= tolerance and
-        abs(win_bottom - mon_bottom) <= tolerance
-    )
-    if res:
-        logger.info(f'window "{win32gui.GetWindowText(hwnd)}" is fullscreen')
-    return res
-
-
-def _is_fullscreen_linux():
-    from ewmh import EWMH
-    if not os.environ.get('DISPLAY'):
-        os.environ.update(get_display_env())
-    ewmh = EWMH()
-    win = ewmh.getActiveWindow()
-    if win is None:
-        return False
-    states = ewmh.getWmState(win, str) or []
-    res = "_NET_WM_STATE_FULLSCREEN" in states
-    if res:
-        title = ewmh.getWmName(win).decode('utf-8')   # or win.get_wm_name()
-        logger.info(f'window "{title}" is fullscreen')
-    return res
-
-
-def is_fullscreen():
-    try:
-        return {'win32': _is_fullscreen_windows,
-                'linux': _is_fullscreen_linux}[sys.platform]()
-    except Exception:
-        logger.exception('failed to check fullscreen')
-        return False
-
-
-def check_cpu_percent(max_percent, interval=1):
-    if max_percent:
-        import psutil
-        if psutil.cpu_percent(interval=interval) > max_percent:
-            logger.info(f'cpu usage is greater than {max_percent}%')
-            return False
-    return True
 
 
 class ConfigNotFound(Exception):
@@ -212,10 +109,11 @@ class RunFile:
 
 class ServiceTracker:
     def __init__(self, work_dir, min_uptime=None, update_delta=120,
-                 requires_online=False):
+                 requires_online=False, must_check_new_volume=False):
         self.file = os.path.join(work_dir, '.svc-tracker.json')
         self.min_uptime = min_uptime
         self.requires_online = requires_online
+        self.must_check_new_volume = must_check_new_volume
         self.uptime_precision = int(ceil(update_delta * 1.5))
         self.check_delta = self._get_check_delta()
         self.data = self._load()
@@ -234,17 +132,32 @@ class ServiceTracker:
         if not self.check_delta:
             return
         now = time.time()
-        self.data = ([r for r in self.data if r[0] > now - self.check_delta] +
-                     [(int(now), int(is_online()) if self.requires_online else -1)])
+        self.data = ([r for r in self.data if r['ts'] > now - self.check_delta] + [
+            {
+                'ts': int(now),
+                'is_online': is_online() if self.requires_online else None,
+                'volume_labels': get_volume_labels() if self.must_check_new_volume else None,
+            }
+        ])
         with open(self.file, 'w') as fd:
             json.dump(self.data, fd)
 
-    def check(self):
+    def check_new_volume(self):
+        if not self.must_check_new_volume:
+            return False
+        vls = [set(r['volume_labels']) for r in self.data
+               if r.get('volume_labels') is not None]
+        if len(vls) < 2:
+            return False
+        return not vls[-1].issubset(vls[-2])
+
+    def check_uptime(self):
         if not self.check_delta:
             return True
         now = time.time()
-        tds = [int(t - now) for t, o in self.data
-               if t > now - self.check_delta and (o or not self.requires_online)]
+        tds = [int(d['ts'] - now) for d in self.data
+               if d['ts'] > now - self.check_delta
+               and (d['is_online'] or not self.requires_online)]
         values = {int((r + self.check_delta) // self.uptime_precision)
                   for r in tds}
         expected = set(range(0, int(ceil(self.check_delta
@@ -271,13 +184,14 @@ class Service:
         self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
 
     def _must_run(self):
-        run_delta = self.run_file.get_ts() + self.run_delta - time.time()
-        if self.tracker.check_delta and run_delta > self.tracker.check_delta:
+        next_run_delta = self.run_file.get_ts() + self.run_delta - time.time()
+        if (not self.tracker.must_check_new_volume and self.tracker.check_delta
+                and next_run_delta > self.tracker.check_delta):
             return False
         self.tracker.update()
-        if run_delta > 0:
+        if next_run_delta > 0 and not self.tracker.check_new_volume():
             return False
-        if not self.tracker.check():
+        if not self.tracker.check_uptime():
             return False
         if is_fullscreen():
             return False

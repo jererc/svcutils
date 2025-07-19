@@ -11,6 +11,7 @@ from unittest.mock import patch
 import psutil
 
 from svcutils import service as module
+from svcutils import utils
 
 
 WORK_DIR = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
@@ -29,7 +30,8 @@ class ConfigTestCase(unittest.TestCase):
     def test_1(self):
         self.assertRaises(Exception, module.Config, 'invalid')
 
-        os.makedirs(WORK_DIR, exist_ok=True)
+        remove_path(WORK_DIR)
+        os.makedirs(WORK_DIR)
         config_file = os.path.join(WORK_DIR, 'config.py')
         with open(config_file, 'w') as fd:
             fd.write("""invalid""")
@@ -50,7 +52,8 @@ class ServiceTrackerTestCase(unittest.TestCase):
     def setUp(self):
         self.target = int
         self.work_dir = WORK_DIR
-        os.makedirs(WORK_DIR, exist_ok=True)
+        remove_path(WORK_DIR)
+        os.makedirs(WORK_DIR)
 
     def test_params(self):
         st = module.ServiceTracker(self.work_dir)
@@ -91,6 +94,37 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertEqual(se.tracker.uptime_precision, 180)
         self.assertTrue(se.tracker.requires_online)
 
+    def test_data(self):
+        st = module.ServiceTracker(self.work_dir, min_uptime=1,
+                                   requires_online=True, must_check_new_volume=10)
+        st.update()
+        pprint(st.data)
+        self.assertTrue(st.data)
+        data = st.data[-1]
+        self.assertIsInstance(data, dict)
+        self.assertIsInstance(data['ts'], int)
+        self.assertIsInstance(data['is_online'], bool)
+        self.assertIsInstance(data['volume_labels'], list)
+
+    def test_check_new_volume(self):
+        st = module.ServiceTracker(self.work_dir, min_uptime=1, must_check_new_volume=False)
+        st.data = [{'volume_labels': ['A']}, {'volume_labels': ['A', 'B']}]
+        self.assertFalse(st.check_new_volume())
+
+        st = module.ServiceTracker(self.work_dir, min_uptime=1, must_check_new_volume=True)
+        st.data = [{'volume_labels': []}, {'volume_labels': []}]
+        self.assertFalse(st.check_new_volume())
+        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['a', 'b']}]
+        self.assertFalse(st.check_new_volume())
+        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': []}]
+        self.assertFalse(st.check_new_volume())
+        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['a', 'b', 'c']}]
+        self.assertTrue(st.check_new_volume())
+        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['b', 'c']}]
+        self.assertTrue(st.check_new_volume())
+        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['a']}]
+        self.assertFalse(st.check_new_volume())
+
     def test_low_uptime(self):
         st = module.ServiceTracker(self.work_dir,
                                    min_uptime=60,
@@ -99,19 +133,19 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
         now = time.time()
         st.data = [
-            [now - 241, 1],
-            [now, 1],
+            {'ts': now - 241, 'is_online': True},
+            {'ts': now, 'is_online': True},
         ]
-        self.assertFalse(st.check())
+        self.assertFalse(st.check_uptime())
 
         now = time.time()
         st.data = [
-            [now - 121, 1],
-            [now, 1],
+            {'ts': now - 121, 'is_online': True},
+            {'ts': now, 'is_online': True},
         ]
-        self.assertTrue(st.check())
+        self.assertTrue(st.check_uptime())
 
-    def test_check(self):
+    def test_check_uptime(self):
         st = module.ServiceTracker(self.work_dir,
                                    min_uptime=300,
                                    requires_online=False,
@@ -119,33 +153,33 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
         now = time.time()
         st.data = [
-            [now - 241, 1],
-            [now - 121, 1],
-            [now, 1],
+            {'ts': now - 241, 'is_online': True},
+            {'ts': now - 121, 'is_online': True},
+            {'ts': now, 'is_online': True},
         ]
-        self.assertFalse(st.check())
+        self.assertFalse(st.check_uptime())
 
         now = time.time()
         st.data = [
-            [now - 361, 1],
-            [now - 61, 1],
-            [now, 1],
+            {'ts': now - 361, 'is_online': True},
+            {'ts': now - 61, 'is_online': True},
+            {'ts': now, 'is_online': True},
         ]
-        self.assertFalse(st.check())
+        self.assertFalse(st.check_uptime())
 
         now = time.time()
         st.data = [
-            [now - 361, 1],
-            [now - 241, 1],
-            [now - 121, 1],
-            [now, 1],
+            {'ts': now - 361, 'is_online': True},
+            {'ts': now - 241, 'is_online': True},
+            {'ts': now - 121, 'is_online': True},
+            {'ts': now, 'is_online': True},
         ]
-        self.assertTrue(st.check())
+        self.assertTrue(st.check_uptime())
 
 
 class DisplayEnvTestCase(unittest.TestCase):
     def test_display_env(self):
-        res = module.get_display_env()
+        res = utils.get_display_env()
         pprint(res)
         self.assertTrue({res[k] for k in ['DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS']})
 
@@ -201,7 +235,7 @@ class MustRunTestCase(unittest.TestCase):
 class TargetTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        os.makedirs(WORK_DIR, exist_ok=True)
+        os.makedirs(WORK_DIR)
         self.work_dir = WORK_DIR
 
     def test_target(self):
@@ -242,7 +276,7 @@ class TargetTestCase(unittest.TestCase):
 class ServiceTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        os.makedirs(WORK_DIR, exist_ok=True)
+        os.makedirs(WORK_DIR)
 
     def test_run_once(self):
         self.attempts = 0
@@ -320,7 +354,7 @@ class ServiceTestCase(unittest.TestCase):
 class RuntimeTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        os.makedirs(WORK_DIR, exist_ok=True)
+        os.makedirs(WORK_DIR)
 
     def test_offline(self):
         self.runs = 0
@@ -365,7 +399,7 @@ class RuntimeTestCase(unittest.TestCase):
 class SingleInstanceTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        os.makedirs(WORK_DIR, exist_ok=True)
+        os.makedirs(WORK_DIR)
         self.lock_file = os.path.join(WORK_DIR, module.LOCK_FILENAME)
         self.pid_file = os.path.join(WORK_DIR, 'pids.txt')
 
