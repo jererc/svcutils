@@ -112,6 +112,10 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertFalse(st.check_new_volume())
 
         st = module.ServiceTracker(self.work_dir, min_uptime=1, must_check_new_volume=True)
+        st.data = []
+        self.assertFalse(st.check_new_volume())
+        st.data = [{'volume_labels': ['a', 'b']}]
+        self.assertFalse(st.check_new_volume())
         st.data = [{'volume_labels': []}, {'volume_labels': []}]
         self.assertFalse(st.check_new_volume())
         st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['a', 'b']}]
