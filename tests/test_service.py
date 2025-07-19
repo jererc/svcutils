@@ -97,7 +97,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
     def test_data(self):
         st = module.ServiceTracker(self.work_dir, min_uptime=1,
                                    requires_online=True, must_check_new_volume=10)
-        st.update()
+        st.update(0)
         pprint(st.data)
         self.assertTrue(st.data)
         data = st.data[-1]
@@ -122,10 +122,14 @@ class ServiceTrackerTestCase(unittest.TestCase):
         self.assertFalse(st.check_new_volume())
         st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': []}]
         self.assertFalse(st.check_new_volume())
-        st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['a', 'b', 'c']}]
+        st.data = [{'volume_labels': ['a']}, {'volume_labels': ['a', 'b']}]
         self.assertTrue(st.check_new_volume())
         st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['b', 'c']}]
         self.assertTrue(st.check_new_volume())
+        st.data = [{'volume_labels': ['a']}, {'volume_labels': ['a', 'b']}, {'volume_labels': ['a', 'b']}]
+        self.assertTrue(st.check_new_volume())
+        st.data = [{'volume_labels': ['a']}, {'volume_labels': ['a', 'b']}, {'volume_labels': ['a']}]
+        self.assertFalse(st.check_new_volume())
         st.data = [{'volume_labels': ['a', 'b']}, {'volume_labels': ['a']}]
         self.assertFalse(st.check_new_volume())
 

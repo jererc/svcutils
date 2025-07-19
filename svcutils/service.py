@@ -128,17 +128,15 @@ class ServiceTracker:
         with open(self.file) as fd:
             return json.load(fd)
 
-    def update(self):
-        if not self.check_delta:
-            return
-        now = time.time()
-        self.data = ([r for r in self.data if r['ts'] > now - self.check_delta] + [
-            {
-                'ts': int(now),
-                'is_online': is_online() if self.requires_online else None,
-                'volume_labels': get_volume_labels() if self.must_check_new_volume else None,
-            }
-        ])
+    def _get_update_entry(self):
+        return {
+            'ts': int(time.time()),
+            'is_online': is_online() if self.requires_online else None,
+            'volume_labels': get_volume_labels() if self.must_check_new_volume else None,
+        }
+
+    def update(self, last_run_ts):
+        self.data = [r for r in self.data if r['ts'] > last_run_ts] + [self._get_update_entry()]
         with open(self.file, 'w') as fd:
             json.dump(self.data, fd)
 
@@ -149,7 +147,7 @@ class ServiceTracker:
                if r.get('volume_labels') is not None]
         if len(vls) < 2:
             return False
-        return not vls[-1].issubset(vls[-2])
+        return not vls[-1].issubset(vls[0])
 
     def check_uptime(self):
         if not self.check_delta:
@@ -184,11 +182,12 @@ class Service:
         self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
 
     def _must_run(self):
-        next_run_delta = self.run_file.get_ts() + self.run_delta - time.time()
-        if (not self.tracker.must_check_new_volume and self.tracker.check_delta
-                and next_run_delta > self.tracker.check_delta):
-            return False
-        self.tracker.update()
+        last_run_ts = self.run_file.get_ts()
+        next_run_delta = last_run_ts + self.run_delta - time.time()
+        # if (not self.tracker.must_check_new_volume and self.tracker.check_delta
+        #         and next_run_delta > self.tracker.check_delta):
+        #     return False
+        self.tracker.update(last_run_ts)
         if next_run_delta > 0 and not self.tracker.check_new_volume():
             return False
         if not self.tracker.check_uptime():
