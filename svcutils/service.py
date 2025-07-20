@@ -97,10 +97,8 @@ class RunFile:
     def __init__(self, file):
         self.file = file
 
-    def get_ts(self, default=0):
-        if not os.path.exists(self.file):
-            return default
-        return get_file_mtime(self.file)
+    def get_ts(self):
+        return get_file_mtime(self.file) if os.path.exists(self.file) else 0
 
     def touch(self):
         with open(self.file, 'w'):
@@ -119,8 +117,7 @@ class ServiceTracker:
         self.data = self._load()
 
     def _get_check_delta(self):
-        return (self.min_uptime + self.uptime_precision
-                if self.min_uptime else None)
+        return self.min_uptime + self.uptime_precision if self.min_uptime else None
 
     def _load(self):
         if not os.path.exists(self.file):
