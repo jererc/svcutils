@@ -15,7 +15,7 @@ from svcutils import service as module
 
 WORK_DIR = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
 
-module.logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def remove_path(path):
@@ -23,6 +23,31 @@ def remove_path(path):
         shutil.rmtree(path)
     elif os.path.isfile(path):
         os.remove(path)
+
+
+class LoggerTestCase(unittest.TestCase):
+    def setUp(self):
+        remove_path(WORK_DIR)
+        os.makedirs(WORK_DIR)
+        self.filename = 'test'
+        self.log_file = os.path.join(WORK_DIR, f'{self.filename}.log')
+
+    def test_1(self):
+        logger.debug('debug')
+        logger.info('info')
+        logger.error('error')
+        self.assertFalse(os.path.exists(self.log_file))
+
+        module.setup_logging(WORK_DIR, self.filename)
+        logger.debug('debug')
+        logger.info('info')
+        logger.error('error')
+        with open(self.log_file) as fd:
+            lines = fd.read().splitlines()
+        pprint(lines)
+        self.assertEqual(len(lines), 2)
+        self.assertTrue(' INFO ' in lines[0])
+        self.assertTrue(' ERROR ' in lines[1])
 
 
 class ConfigTestCase(unittest.TestCase):

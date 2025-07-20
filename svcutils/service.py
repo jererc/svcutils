@@ -21,7 +21,8 @@ LOCK_FILENAME = '.svc.lock'
 logger = logging.getLogger(__name__)
 
 
-def setup_logging(logger, path, name, max_size=1024000):
+def setup_logging(path, name, max_size=1024000):
+    root_logger = logging.getLogger('')
     logging.basicConfig(level=logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s %(levelname)s [PID %(process)d] '
                                   '%(funcName)s(%(lineno)d) %(message)s')
@@ -29,19 +30,14 @@ def setup_logging(logger, path, name, max_size=1024000):
         stdout_handler = logging.StreamHandler(sys.stdout)
         stdout_handler.setFormatter(formatter)
         stdout_handler.setLevel(logging.DEBUG)
-        logger.addHandler(stdout_handler)
+        root_logger.addHandler(stdout_handler)
     os.makedirs(path, exist_ok=True)
     file_handler = RotatingFileHandler(os.path.join(path, f'{name}.log'),
                                        mode='a', maxBytes=max_size, backupCount=0,
                                        encoding='utf-8', delay=0)
     file_handler.setFormatter(formatter)
     file_handler.setLevel(logging.INFO)
-    logger.addHandler(file_handler)
-
-
-def get_logger(path, name):
-    setup_logging(logger, path=path, name=name)
-    return logger
+    root_logger.addHandler(file_handler)
 
 
 def get_file_mtime(x):
