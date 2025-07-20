@@ -119,19 +119,22 @@ class ServiceTrackerTestCase(unittest.TestCase):
         st = module.ServiceTracker(self.work_dir, min_uptime=1, must_check_new_volume=True)
         st.data = []
         self.assertFalse(st.check_new_volume(last_run_ts))
-        st.data = [item(['a', 'b'], last_run_ts - 1)]
+        st.data = [item(['a'], last_run_ts - 1)]
+        self.assertFalse(st.check_new_volume(last_run_ts))
+        st.data = [item(['a'], last_run_ts + 1)]
         self.assertFalse(st.check_new_volume(last_run_ts))
         st.data = [item([], last_run_ts - 1), item([], last_run_ts + 1)]
         self.assertFalse(st.check_new_volume(last_run_ts))
-        st.data = [item(['a', 'b'], last_run_ts - 1), item(['a', 'b'], last_run_ts + 1)]
+        st.data = [item(['a', 'b'], last_run_ts - 1), item(['a'], last_run_ts + 1), item(['a', 'b'], last_run_ts + 2)]
         self.assertFalse(st.check_new_volume(last_run_ts))
-        st.data = [item(['a', 'b'], last_run_ts - 1), item([], last_run_ts + 1)]
+        st.data = [item(['a', 'b'], last_run_ts - 1), item(['a'], last_run_ts + 1)]
         self.assertFalse(st.check_new_volume(last_run_ts))
+
         st.data = [item(['a'], last_run_ts - 1), item(['a', 'b'], last_run_ts + 1)]
         self.assertTrue(st.check_new_volume(last_run_ts))
         st.data = [item(['a', 'b'], last_run_ts - 1), item(['b', 'c'], last_run_ts + 1)]
         self.assertTrue(st.check_new_volume(last_run_ts))
-        st.data = [item(['a'], last_run_ts - 1), item(['a', 'b'], last_run_ts + 1), item(['a', 'b'], last_run_ts + 1)]
+        st.data = [item(['a'], last_run_ts - 1), item(['a', 'b'], last_run_ts + 1), item(['a', 'b'], last_run_ts + 2)]
         self.assertTrue(st.check_new_volume(last_run_ts))
         st.data = [item(['a'], last_run_ts - 1), item(['a', 'b'], last_run_ts + 1), item(['a'], last_run_ts + 1)]
         self.assertFalse(st.check_new_volume(last_run_ts))

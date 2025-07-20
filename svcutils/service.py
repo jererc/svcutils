@@ -141,19 +141,31 @@ class ServiceTracker:
         with open(self.file, 'w') as fd:
             json.dump(self.data, fd)
 
+    def _get_item_volume_labels(self, item):
+        return set(item['volume_labels'] or [])
+
+    def _get_last_volume_labels(self, last_run_ts):
+        try:
+            item = self.data[-1]
+        except IndexError:
+            return None
+        return self._get_item_volume_labels(item) if item['ts'] > last_run_ts else None
+
+    def _get_prev_volume_labels(self, last_run_ts):
+        for i, item in enumerate(self.data):
+            if item['ts'] > last_run_ts:
+                return self._get_item_volume_labels(self.data[i - 1]) if i > 0 else None
+
     def check_new_volume(self, last_run_ts):
         if not self.must_check_new_volume:
             return False
-
-        def get_labels(item):
-            return set(item['volume_labels'] or [])
-
-        try:
-            before = [r for r in self.data if r['ts'] < last_run_ts][-1]
-            after = [r for r in self.data if r['ts'] > last_run_ts][-1]
-            return not get_labels(after).issubset(get_labels(before))
-        except IndexError:
+        last = self._get_last_volume_labels(last_run_ts)
+        if last is None:
             return False
+        prev = self._get_prev_volume_labels(last_run_ts)
+        if prev is None:
+            return False
+        return not last.issubset(prev)
 
     def check_uptime(self):
         if not self.check_delta:
