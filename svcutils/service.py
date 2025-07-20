@@ -174,10 +174,8 @@ class ServiceTracker:
         tds = [int(d['ts'] - now) for d in self.data
                if d['ts'] > now - self.check_delta
                and (d['is_online'] or not self.requires_online)]
-        values = {int((r + self.check_delta) // self.uptime_precision)
-                  for r in tds}
-        expected = set(range(0, int(ceil(self.check_delta
-                                         / self.uptime_precision))))
+        values = {int((r + self.check_delta) // self.uptime_precision) for r in tds}
+        expected = set(range(0, int(ceil(self.check_delta / self.uptime_precision))))
         res = values >= expected
         if not res:
             logger.info(f'{"online " if self.requires_online else ""}'
