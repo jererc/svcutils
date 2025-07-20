@@ -11,7 +11,6 @@ from unittest.mock import patch
 import psutil
 
 from svcutils import service as module
-from svcutils import utils
 
 
 WORK_DIR = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
@@ -195,7 +194,7 @@ class ServiceTrackerTestCase(unittest.TestCase):
 
 class DisplayEnvTestCase(unittest.TestCase):
     def test_display_env(self):
-        res = utils.get_display_env()
+        res = module.get_display_env()
         pprint(res)
         self.assertTrue({res[k] for k in ['DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS']})
 
