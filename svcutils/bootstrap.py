@@ -115,7 +115,7 @@ class Bootstrapper:
         res = subprocess.run(['crontab', '-l'], stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, text=True)
         current_crontab = res.stdout if res.returncode == 0 else ''
-        new_job = f'{self._generate_crontab_schedule()} {cmd}\n'
+        new_job = f'{self._generate_crontab_schedule()} flock -n /tmp/{self.name}.lock {cmd}\n'
         updated_crontab = ''
         job_found = False
         for line in current_crontab.splitlines():
