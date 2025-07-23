@@ -10,10 +10,9 @@ from unittest.mock import patch
 
 import psutil
 
+from tests import WORK_DIR
 from svcutils import service as module
 
-
-WORK_DIR = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
 
 logger = logging.getLogger(__name__)
 

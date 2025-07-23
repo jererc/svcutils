@@ -3,10 +3,8 @@ import shutil
 import time
 import unittest
 
+from tests import WORK_DIR
 from svcutils import notifier as module
-
-
-WORK_DIR = os.path.join(os.path.expanduser('~'), '_tests', 'svcutils')
 
 
 def remove_path(path):
@@ -19,7 +17,7 @@ def remove_path(path):
 class NotifierTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
-        os.makedirs(WORK_DIR, exist_ok=True)
+        os.makedirs(WORK_DIR)
 
     def test_1(self):
         for i in range(3):
