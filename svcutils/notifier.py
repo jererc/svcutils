@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class WindowsNotifier:
-    def send(self, title, body, app_name=None, on_click=None, replace_key=None, **kwargs):
+    def send(self, title, body, app_name=None, on_click=None, replace_key=None):
         from win11toast import clear_toast, notify as _notify
         if replace_key:
             clear_toast(app_id=app_name, tag=replace_key, group=app_name)
@@ -37,7 +37,7 @@ class LinuxNotifier:
         with open(self.meta_file, 'w') as f:
             json.dump(meta, f, indent=4, sort_keys=True)
 
-    def send(self, title, body, app_name=None, on_click=None, replace_key=None, **kwargs):
+    def send(self, title, body, app_name=None, on_click=None, replace_key=None):
         env = os.environ.copy()
         if not env.get('DISPLAY'):
             env.update(get_display_env())
