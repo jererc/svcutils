@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 class WindowsNotifier:
     def send(self, title, body, app_name=None, on_click=None, replace_key=None):
-        from win11toast import clear_toast, notify as _notify
+        from win11toast import notify as _notify
         if replace_key:
-            clear_toast(app_id=app_name, tag=replace_key, group=app_name)
+            self.clear(app_name, replace_key)
         _notify(title=title, body=body, app_id=app_name, on_click=on_click,
                 tag=replace_key, group=app_name)
 
@@ -25,7 +25,7 @@ class WindowsNotifier:
 
 
 class LinuxNotifier:
-    meta_file = '/tmp/notifier.json'
+    meta_file = os.path.expanduser('~/.notifier.json')
 
     def get_meta(self):
         if not os.path.exists(self.meta_file):
@@ -87,9 +87,9 @@ def notify(*args, **kwargs):
         logger.exception('failed to send notification')
 
 
-def clear_notif(app_name, replace_key):
+def clear_notification(*args, **kwargs):
     try:
         {'win32': WindowsNotifier,
-         'linux': LinuxNotifier}[sys.platform]().clear(app_name, replace_key)
+         'linux': LinuxNotifier}[sys.platform]().clear(*args, **kwargs)
     except Exception:
         logger.exception('failed to clear notification')

@@ -10,4 +10,4 @@ class NotifierTestCase(unittest.TestCase):
         for i in range(3):
             module.notify(f'title{i}', 'body', app_name='app', replace_key='title')
             time.sleep(1)
-        module.clear_notif(app_name='app', replace_key='title')
+        module.clear_notification(app_name='app', replace_key='title')
