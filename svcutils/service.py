@@ -157,21 +157,17 @@ def _list_windows_mountpoint_labels():
         )
         return label_buf.value if ok else None
 
-    return {d.mountpoint: get_label(d.mountpoint)
-            for d in psutil.disk_partitions(all=True)}
+    return {d.mountpoint: get_label(d.mountpoint) for d in psutil.disk_partitions(all=True)}
 
 
 def _list_linux_mountpoint_labels():
-    lsblk = subprocess.run(
-        ["lsblk", "-o", "LABEL,MOUNTPOINT", "--json", "--paths"],
-        capture_output=True, text=True, check=True
-    )
+    lsblk = subprocess.run(["lsblk", "-o", "LABEL,MOUNTPOINT", "--json", "--paths"],
+                           capture_output=True, text=True, check=True)
     data = json.loads(lsblk.stdout)
     mp_labels = {item["mountpoint"]: item["label"]
                  for item in data.get("blockdevices", [])
                  if item.get("mountpoint") is not None}
-    return {d.mountpoint: mp_labels.get(d.mountpoint)
-            for d in psutil.disk_partitions(all=False)}
+    return {d.mountpoint: mp_labels.get(d.mountpoint) for d in psutil.disk_partitions(all=False)}
 
 
 def list_mountpoint_labels():
@@ -320,8 +316,7 @@ class ServiceTracker:
         expected = set(range(0, int(ceil(self.check_delta / self.uptime_precision))))
         res = values >= expected
         if not res:
-            logger.info(f'{"online " if self.requires_online else ""}'
-                        f'uptime is less than {self.min_uptime} seconds')
+            logger.info(f'{"online " if self.requires_online else ""} uptime is less than {self.min_uptime} seconds')
         return res
 
 
