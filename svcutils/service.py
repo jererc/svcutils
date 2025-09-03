@@ -310,8 +310,7 @@ class ServiceTracker:
             return True
         now = time.time()
         tds = [int(d['ts'] - now) for d in self.data
-               if d['ts'] > now - self.check_delta
-               and (d['is_online'] or not self.requires_online)]
+               if d['ts'] > now - self.check_delta and (d['is_online'] or not self.requires_online)]
         values = {int((r + self.check_delta) // self.uptime_precision) for r in tds}
         expected = set(range(0, int(ceil(self.check_delta / self.uptime_precision))))
         res = values >= expected
@@ -336,12 +335,9 @@ class Service:
 
     def _must_run(self):
         last_run_ts = self.run_file.get_ts()
-        next_run_delta = last_run_ts + self.run_delta - time.time()
-        # if (not self.tracker.must_check_new_volume and self.tracker.check_delta
-        #         and next_run_delta > self.tracker.check_delta):
-        #     return False
         self.tracker.update(last_run_ts)
-        if next_run_delta > 0 and not self.tracker.check_new_volume(last_run_ts):
+        is_ready = time.time() > last_run_ts + self.run_delta
+        if not (is_ready or self.tracker.check_new_volume(last_run_ts)):
             return False
         if not self.tracker.check_uptime():
             return False
