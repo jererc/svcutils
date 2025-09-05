@@ -210,7 +210,7 @@ class ServiceTestCase(unittest.TestCase):
 
     def test_new_volume(self):
         service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30,
-                                 force_run_if_new_volume=True)
+                                 trigger_on_new_volume=True)
         now = datetime.now().replace(minute=0, second=0)
         dt = now + timedelta(seconds=1)
         data = self._run_once(service, dt, volume_labels=['vol1'])
@@ -232,7 +232,7 @@ class ServiceTestCase(unittest.TestCase):
 
     def test_new_volume2(self):
         service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30,
-                                 force_run_if_new_volume=True)
+                                 trigger_on_new_volume=True)
         now = datetime.now().replace(minute=0, second=0)
         dt = now + timedelta(seconds=1)
         data = self._run_once(service, dt, volume_labels=['vol1'])
