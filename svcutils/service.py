@@ -326,7 +326,7 @@ class Service:
         expected = set(range(0, int(ceil(self.check_delta / self.uptime_precision))))
         res = values >= expected
         if not res:
-            logger.info(f'{"online " if self.requires_online else ""} uptime is less than {self.min_uptime} seconds')
+            logger.info(f'{"online " if self.requires_online else ""}uptime is less than {self.min_uptime} seconds')
         return res
 
     def _must_run(self, force=False):
