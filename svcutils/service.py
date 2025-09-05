@@ -250,7 +250,7 @@ class RunFile:
 
 class Service:
     def __init__(self, target, work_dir, args=None, kwargs=None, run_delta=60,
-                 min_uptime=None, update_delta=120, requires_online=False,
+                 min_uptime=None, attempt_delta=120, requires_online=False,
                  trigger_on_new_volume=False, max_cpu_percent=None):
         self.target = target
         self.work_dir = work_dir
@@ -258,13 +258,13 @@ class Service:
         self.kwargs = kwargs or {}
         self.run_delta = run_delta
         self.min_uptime = min_uptime
-        self.update_delta = update_delta
+        self.attempt_delta = attempt_delta
         self.requires_online = requires_online
         self.trigger_on_new_volume = trigger_on_new_volume
         self.max_cpu_percent = max_cpu_percent
         self.tracker_file = os.path.join(self.work_dir, '.svc.json')
         self.tracker_data = self._load_tracker_data()
-        self.uptime_precision = int(ceil(self.update_delta * 1.5))
+        self.uptime_precision = int(ceil(self.attempt_delta * 1.5))
         self.check_delta = self.min_uptime + self.uptime_precision if self.min_uptime else None
 
     def _load_tracker_data(self):
@@ -365,7 +365,7 @@ class Service:
         def run():
             while True:
                 self._attempt_run()
-                logger.debug(f'sleeping for {self.update_delta} seconds')
-                time.sleep(self.update_delta)
+                logger.debug(f'sleeping for {self.attempt_delta} seconds')
+                time.sleep(self.attempt_delta)
 
         run()
