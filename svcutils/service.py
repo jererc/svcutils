@@ -1,4 +1,6 @@
 import ctypes
+import contextlib
+from datetime import datetime
 import functools
 import importlib.util
 import json
@@ -246,71 +248,80 @@ class RunFile:
             pass
 
 
-class ServiceTracker:
-    def __init__(self, work_dir, min_uptime=None, update_delta=120,
-                 requires_online=False, must_check_new_volume=False):
-        self.file = os.path.join(work_dir, '.svc-tracker.json')
+class Service:
+    def __init__(self, target, work_dir, args=None, kwargs=None, run_delta=60,
+                 min_uptime=None, update_delta=120, requires_online=False,
+                 force_run_if_new_volume=False, max_cpu_percent=None):
+        self.target = target
+        self.work_dir = work_dir
+        self.args = args or ()
+        self.kwargs = kwargs or {}
+        self.run_delta = run_delta
         self.min_uptime = min_uptime
+        self.update_delta = update_delta
         self.requires_online = requires_online
-        self.must_check_new_volume = must_check_new_volume
-        self.uptime_precision = int(ceil(update_delta * 1.5))
-        self.check_delta = self._get_check_delta()
-        self.data = self._load()
+        self.force_run_if_new_volume = force_run_if_new_volume
+        self.max_cpu_percent = max_cpu_percent
+        self.tracker_file = os.path.join(self.work_dir, 'tracker.json')
+        self.tracker_data = self._load_tracker_data()
+        self.uptime_precision = int(ceil(self.update_delta * 1.5))
+        self.check_delta = self.min_uptime + self.uptime_precision if self.min_uptime else None
 
-    def _get_check_delta(self):
-        return self.min_uptime + self.uptime_precision if self.min_uptime else None
+    def _load_tracker_data(self):
+        try:
+            with open(self.tracker_file) as fd:
+                return json.load(fd)
+        except FileNotFoundError:
+            return {'attempts': [], 'last_run': None}
 
-    def _load(self):
-        if not os.path.exists(self.file):
-            return []
-        with open(self.file) as fd:
-            return json.load(fd)
+    def _get_tracker_attempts_history(self):
+        if self.tracker_data['last_run']:
+            begin = self.tracker_data['last_run']['ts'] - (self.check_delta or 0)
+        else:
+            begin = time.time() - self.run_delta * 2
+        return [a for a in self.tracker_data['attempts'] if a['ts'] >= begin]
 
-    def _generate_update_item(self):
+    def _generate_tracker_attempt(self):
+        now = datetime.now()
         return {
-            'ts': time.time(),
+            'ts': now.timestamp(),
+            'dt': now.isoformat(),
             'is_online': is_online() if self.requires_online else None,
-            'volume_labels': get_volume_labels() if self.must_check_new_volume else None,
+            'volume_labels': get_volume_labels() if self.force_run_if_new_volume else None,
+            'run': False,
         }
 
-    def update(self, last_run_ts):
-        begin_ts = max(0, last_run_ts - (self.check_delta or 0))
-        self.data = [r for r in self.data if r['ts'] > begin_ts] + [self._generate_update_item()]
-        with open(self.file, 'w') as fd:
-            json.dump(self.data, fd)
-
-    def _get_item_volume_labels(self, item):
-        return set(item['volume_labels'] or [])
-
-    def _get_latest_volume_labels(self, last_run_ts):
+    @contextlib.contextmanager
+    def update_tracker(self):
+        self.tracker_data['attempts'] = self._get_tracker_attempts_history() + [self._generate_tracker_attempt()]
         try:
-            item = self.data[-1]
+            yield
+        finally:
+            with open(self.tracker_file, 'w') as fd:
+                json.dump(self.tracker_data, fd, indent=4, sort_keys=True)
+
+    def _check_new_volume(self):
+        def get_labels(attempt):
+            return set(attempt['volume_labels'] or [])
+
+        if not self.force_run_if_new_volume:
+            return False
+        try:
+            current_labels = get_labels(self.tracker_data['attempts'][-1])
         except IndexError:
-            return None
-        return self._get_item_volume_labels(item) if item['ts'] > last_run_ts else None
-
-    def _get_last_run_volume_labels(self, last_run_ts):
-        for i, item in enumerate(self.data):
-            if item['ts'] > last_run_ts:
-                return self._get_item_volume_labels(self.data[i - 1] if i > 0 else item)
-
-    def check_new_volume(self, last_run_ts):
-        if not self.must_check_new_volume:
             return False
-        latest_labels = self._get_latest_volume_labels(last_run_ts)
-        if latest_labels is None:
+        try:
+            last_run_labels = get_labels(self.tracker_data['last_run'])
+        except IndexError:
             return False
-        last_run_labels = self._get_last_run_volume_labels(last_run_ts)
-        if last_run_labels is None:
-            return False
-        return not latest_labels.issubset(last_run_labels)
+        return not current_labels.issubset(last_run_labels)
 
-    def check_uptime(self):
+    def _check_uptime(self):
         if not self.check_delta:
             return True
         now = time.time()
-        tds = [int(d['ts'] - now) for d in self.data
-               if d['ts'] > now - self.check_delta and (d['is_online'] or not self.requires_online)]
+        tds = [int(i['ts'] - now) for i in self.tracker_data['attempts']
+               if i['ts'] > now - self.check_delta and (i['is_online'] or not self.requires_online)]
         values = {int((r + self.check_delta) // self.uptime_precision) for r in tds}
         expected = set(range(0, int(ceil(self.check_delta / self.uptime_precision))))
         res = values >= expected
@@ -318,42 +329,27 @@ class ServiceTracker:
             logger.info(f'{"online " if self.requires_online else ""} uptime is less than {self.min_uptime} seconds')
         return res
 
-
-class Service:
-    def __init__(self, target, work_dir, args=None, kwargs=None,
-                 run_delta=60, daemon_loop_delta=60, max_cpu_percent=None,
-                 **tracker_args):
-        self.target = target
-        self.args = args or ()
-        self.kwargs = kwargs or {}
-        self.work_dir = work_dir
-        self.run_delta = run_delta
-        self.daemon_loop_delta = daemon_loop_delta
-        self.max_cpu_percent = max_cpu_percent
-        self.tracker = ServiceTracker(work_dir, **tracker_args)
-        self.run_file = RunFile(os.path.join(work_dir, '.svc.run'))
-
-    def _must_run(self):
-        last_run_ts = self.run_file.get_ts()
-        self.tracker.update(last_run_ts)
-        is_ready = time.time() > last_run_ts + self.run_delta
-        if not (is_ready or self.tracker.check_new_volume(last_run_ts)):
-            return False
-        if not self.tracker.check_uptime():
-            return False
-        if is_fullscreen():
-            return False
-        if not check_cpu_percent(self.max_cpu_percent):
-            return False
-        return True
+    def _must_run(self, force=False):
+        with self.update_tracker():
+            if not force:
+                last_run_ts = self.tracker_data['last_run']['ts'] if self.tracker_data['last_run'] else 0
+                is_ready = time.time() > last_run_ts + self.run_delta
+                if not (is_ready or self._check_new_volume()):
+                    return False
+                if not self._check_uptime():
+                    return False
+                if is_fullscreen():
+                    return False
+                if not check_cpu_percent(self.max_cpu_percent):
+                    return False
+            self.tracker_data['attempts'][-1]['run'] = True
+            self.tracker_data['last_run'] = self.tracker_data['attempts'][-1]
+            return True
 
     def _attempt_run(self, force=False):
         try:
-            if force or self._must_run():
-                try:
-                    self.target(*self.args, **self.kwargs)
-                finally:
-                    self.run_file.touch()
+            if self._must_run(force):
+                self.target(*self.args, **self.kwargs)
         except Exception:
             logger.exception('service failed')
 
@@ -369,7 +365,7 @@ class Service:
         def run():
             while True:
                 self._attempt_run()
-                logger.debug(f'sleeping for {self.daemon_loop_delta} seconds')
-                time.sleep(self.daemon_loop_delta)
+                logger.debug(f'sleeping for {self.update_delta} seconds')
+                time.sleep(self.update_delta)
 
         run()

@@ -1,14 +1,12 @@
+from datetime import datetime, timedelta
 import logging
 from multiprocessing import Process
 import os
 from pprint import pprint
 import shutil
-import signal
 import time
 import unittest
 from unittest.mock import patch
-
-import psutil
 
 from tests import WORK_DIR
 from svcutils import service as module
@@ -71,204 +69,11 @@ class ConfigTestCase(unittest.TestCase):
         self.assertEqual(config.CONST3, None)
 
 
-class ServiceTrackerTestCase(unittest.TestCase):
-    def setUp(self):
-        self.target = int
-        self.work_dir = WORK_DIR
-        remove_path(WORK_DIR)
-        os.makedirs(WORK_DIR)
-
-    def test_params(self):
-        st = module.ServiceTracker(self.work_dir)
-        self.assertEqual(st.check_delta, None)
-
-        st = module.ServiceTracker(self.work_dir, min_uptime=0)
-        self.assertEqual(st.check_delta, None)
-
-        st = module.ServiceTracker(self.work_dir, min_uptime=1)
-        self.assertEqual(st.uptime_precision, 180)
-        self.assertEqual(st.check_delta, 181)
-
-        st = module.ServiceTracker(self.work_dir,
-                                   min_uptime=60,
-                                   update_delta=10)
-        self.assertEqual(st.uptime_precision, 15)
-        self.assertEqual(st.check_delta, 75)
-
-    def test_service_params(self):
-        se = module.Service(
-            target=self.target,
-            work_dir=self.work_dir,
-            run_delta=10,
-        )
-        self.assertEqual(se.tracker.min_uptime, None)
-        self.assertEqual(se.tracker.uptime_precision, 180)
-        self.assertFalse(se.tracker.requires_online)
-
-        se = module.Service(
-            target=self.target,
-            work_dir=self.work_dir,
-            run_delta=10,
-            min_uptime=300,
-            update_delta=120,
-            requires_online=True,
-        )
-        self.assertEqual(se.tracker.min_uptime, 300)
-        self.assertEqual(se.tracker.uptime_precision, 180)
-        self.assertTrue(se.tracker.requires_online)
-
-    def test_data(self):
-        st = module.ServiceTracker(self.work_dir, min_uptime=1,
-                                   requires_online=True, must_check_new_volume=10)
-        st.update(0)
-        pprint(st.data)
-        self.assertTrue(st.data)
-        data = st.data[-1]
-        self.assertIsInstance(data, dict)
-        self.assertIsInstance(data['ts'], float)
-        self.assertIsInstance(data['is_online'], bool)
-        self.assertIsInstance(data['volume_labels'], list)
-
-    def test_check_new_volume(self):
-        def item(volume_labels, ts):
-            return {'ts': ts, 'volume_labels': volume_labels}
-
-        last_run_ts = time.time() - 60
-
-        st = module.ServiceTracker(self.work_dir, min_uptime=1, must_check_new_volume=False)
-        st.data = [item(['a'], last_run_ts - 1), item(['a', 'b'], last_run_ts + 1)]
-        self.assertFalse(st.check_new_volume(last_run_ts))
-
-        st = module.ServiceTracker(self.work_dir, min_uptime=1, must_check_new_volume=True)
-        st.data = []
-        self.assertFalse(st.check_new_volume(last_run_ts))
-        st.data = [item(['a'], last_run_ts - 1)]
-        self.assertFalse(st.check_new_volume(last_run_ts))
-        st.data = [item(['a'], last_run_ts + 1)]
-        self.assertFalse(st.check_new_volume(last_run_ts))
-        st.data = [item([], last_run_ts - 1), item([], last_run_ts + 1)]
-        self.assertFalse(st.check_new_volume(last_run_ts))
-        st.data = [item(['a', 'b'], last_run_ts - 1), item(['a'], last_run_ts + 1), item(['a', 'b'], last_run_ts + 2)]
-        self.assertFalse(st.check_new_volume(last_run_ts))
-        st.data = [item(['a', 'b'], last_run_ts - 1), item(['a'], last_run_ts + 1)]
-        self.assertFalse(st.check_new_volume(last_run_ts))
-
-        st.data = [item(['a'], last_run_ts - 1), item(['a', 'b'], last_run_ts + 1)]
-        self.assertTrue(st.check_new_volume(last_run_ts))
-        st.data = [item(['a', 'b'], last_run_ts - 1), item(['b', 'c'], last_run_ts + 1)]
-        self.assertTrue(st.check_new_volume(last_run_ts))
-        st.data = [item(['a'], last_run_ts - 1), item(['a', 'b'], last_run_ts + 1), item(['a', 'b'], last_run_ts + 2)]
-        self.assertTrue(st.check_new_volume(last_run_ts))
-        st.data = [item(['a'], last_run_ts - 1), item(['a', 'b'], last_run_ts + 1), item(['a'], last_run_ts + 1)]
-        self.assertFalse(st.check_new_volume(last_run_ts))
-        st.data = [item(['a', 'b'], last_run_ts - 1), item(['a'], last_run_ts + 1)]
-        self.assertFalse(st.check_new_volume(last_run_ts))
-
-    def test_low_uptime(self):
-        st = module.ServiceTracker(self.work_dir,
-                                   min_uptime=60,
-                                   requires_online=False,
-                                   update_delta=120)
-
-        now = time.time()
-        st.data = [
-            {'ts': now - 241, 'is_online': True},
-            {'ts': now, 'is_online': True},
-        ]
-        self.assertFalse(st.check_uptime())
-
-        now = time.time()
-        st.data = [
-            {'ts': now - 121, 'is_online': True},
-            {'ts': now, 'is_online': True},
-        ]
-        self.assertTrue(st.check_uptime())
-
-    def test_check_uptime(self):
-        st = module.ServiceTracker(self.work_dir,
-                                   min_uptime=300,
-                                   requires_online=False,
-                                   update_delta=120)
-
-        now = time.time()
-        st.data = [
-            {'ts': now - 241, 'is_online': True},
-            {'ts': now - 121, 'is_online': True},
-            {'ts': now, 'is_online': True},
-        ]
-        self.assertFalse(st.check_uptime())
-
-        now = time.time()
-        st.data = [
-            {'ts': now - 361, 'is_online': True},
-            {'ts': now - 61, 'is_online': True},
-            {'ts': now, 'is_online': True},
-        ]
-        self.assertFalse(st.check_uptime())
-
-        now = time.time()
-        st.data = [
-            {'ts': now - 361, 'is_online': True},
-            {'ts': now - 241, 'is_online': True},
-            {'ts': now - 121, 'is_online': True},
-            {'ts': now, 'is_online': True},
-        ]
-        self.assertTrue(st.check_uptime())
-
-
 class DisplayEnvTestCase(unittest.TestCase):
     def test_display_env(self):
         res = module.get_display_env()
         pprint(res)
         self.assertTrue({res[k] for k in ['DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS']})
-
-
-class MustRunTestCase(unittest.TestCase):
-    def setUp(self):
-        self.target = int
-        self.work_dir = WORK_DIR
-
-    def test_run(self):
-        with patch.object(module.RunFile, 'get_ts',
-                          return_value=time.time() - 1):
-            self.assertFalse(module.Service(
-                target=self.target,
-                work_dir=self.work_dir,
-                run_delta=10,
-            )._must_run())
-
-        with patch.object(module.RunFile, 'get_ts',
-                          return_value=time.time() - 11):
-            self.assertTrue(module.Service(
-                target=self.target,
-                work_dir=self.work_dir,
-                run_delta=10,
-            )._must_run())
-
-    def test_cpu_percent(self):
-        with patch.object(module, 'is_fullscreen', return_value=False):
-
-            with patch.object(module.RunFile, 'get_ts',
-                              return_value=time.time() - 11), \
-                    patch.object(psutil, 'cpu_percent',
-                                 return_value=20):
-                self.assertFalse(module.Service(
-                    target=self.target,
-                    work_dir=self.work_dir,
-                    run_delta=10,
-                    max_cpu_percent=10,
-                )._must_run())
-
-            with patch.object(module.RunFile, 'get_ts',
-                              return_value=time.time() - 11), \
-                    patch.object(psutil, 'cpu_percent',
-                                 return_value=1):
-                self.assertTrue(module.Service(
-                    target=self.target,
-                    work_dir=self.work_dir,
-                    run_delta=10,
-                    max_cpu_percent=10,
-                )._must_run())
 
 
 class TargetTestCase(unittest.TestCase):
@@ -312,129 +117,6 @@ class TargetTestCase(unittest.TestCase):
         self.assertEqual(self.result, ('123', '456'))
 
 
-class ServiceTestCase(unittest.TestCase):
-    def setUp(self):
-        remove_path(WORK_DIR)
-        os.makedirs(WORK_DIR)
-
-    def test_run_once(self):
-        self.attempts = 0
-        self.runs = 0
-
-        def target():
-            self.runs += 1
-
-        svc = module.Service(
-            target=target,
-            work_dir=WORK_DIR,
-            run_delta=1,
-        )
-        end_ts = time.time() + 3
-        while time.time() < end_ts:
-            svc.run_once()
-            self.attempts += 1
-            time.sleep(.2)
-        print(f'{self.attempts=}, {self.runs=}')
-        self.assertTrue(self.attempts >= 10)
-        self.assertTrue(self.runs <= 4)
-
-    def test_run_exc(self):
-        self.result_path = os.path.join(WORK_DIR, '_test_result')
-
-        def target():
-            with open(self.result_path, 'a') as fd:
-                fd.write('call\n')
-            raise Exception('failed')
-
-        def run():
-            module.Service(
-                target=target,
-                work_dir=WORK_DIR,
-                run_delta=1,
-                daemon_loop_delta=.2,
-            ).run()
-
-        proc = Process(target=run)
-        proc.start()
-        time.sleep(3)
-        os.kill(proc.pid, signal.SIGTERM)
-
-        with open(self.result_path) as fd:
-            lines = fd.read().splitlines()
-        print(lines)
-        self.assertEqual(lines, ['call'] * 3)
-
-    def test_run(self):
-        self.result_path = os.path.join(WORK_DIR, '_test_result')
-
-        def target():
-            with open(self.result_path, 'a') as fd:
-                fd.write('call\n')
-
-        def run():
-            module.Service(
-                target=target,
-                work_dir=WORK_DIR,
-                run_delta=1,
-                daemon_loop_delta=.2,
-            ).run()
-
-        proc = Process(target=run)
-        proc.start()
-        time.sleep(3)
-        os.kill(proc.pid, signal.SIGTERM)
-
-        with open(self.result_path) as fd:
-            lines = fd.read().splitlines()
-        print(lines)
-        self.assertEqual(lines, ['call'] * 3)
-
-
-class RuntimeTestCase(unittest.TestCase):
-    def setUp(self):
-        remove_path(WORK_DIR)
-        os.makedirs(WORK_DIR)
-
-    def test_offline(self):
-        self.runs = 0
-
-        def target():
-            self.runs += 1
-
-        svc = module.Service(
-            target=target,
-            work_dir=WORK_DIR,
-            run_delta=1,
-            min_uptime=5,
-            requires_online=True,
-        )
-        with patch.object(module, 'is_online', return_value=False):
-            end_ts = time.time() + 7
-            while time.time() < end_ts:
-                svc.run_once()
-                time.sleep(1)
-        self.assertFalse(self.runs)
-
-    def test_online(self):
-        self.runs = 0
-
-        def target():
-            self.runs += 1
-
-        svc = module.Service(
-            target=target,
-            work_dir=WORK_DIR,
-            run_delta=1,
-            min_uptime=5,
-            requires_online=True,
-        )
-        end_ts = time.time() + 7
-        while time.time() < end_ts:
-            svc.run_once()
-            time.sleep(1)
-        self.assertTrue(self.runs)
-
-
 class SingleInstanceTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
@@ -464,3 +146,129 @@ class SingleInstanceTestCase(unittest.TestCase):
         with open(self.pid_file) as fd:
             ran_pids = [int(r) for r in fd.read().splitlines()]
         self.assertEqual(ran_pids, pids)
+
+
+class ServiceTestCase(unittest.TestCase):
+    def setUp(self):
+        remove_path(WORK_DIR)
+        os.makedirs(WORK_DIR)
+        self.runs = 0
+
+    def _target(self):
+        self.runs += 1
+
+    def _run_once(self, service, now, volume_labels=None, is_fullscreen=False):
+        print('*' * 80)
+        print(f'running at {now=}')
+        with patch('svcutils.service.datetime') as mock_datetime, \
+                patch('svcutils.service.time.time', return_value=now.timestamp()), \
+                patch('svcutils.service.is_fullscreen', return_value=is_fullscreen), \
+                patch('svcutils.service.get_volume_labels', return_value=volume_labels):
+            mock_datetime.now.return_value = now
+            service.run_once()
+        data = service._load_tracker_data()
+        pprint(data)
+        return data
+
+    def test_default(self):
+        service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30)
+        data = service._load_tracker_data()
+        self.assertEqual(data, {'attempts': [], 'last_run': None})
+
+        now = datetime.now().replace(minute=0, second=0)
+        dt = now + timedelta(seconds=1)
+        data = self._run_once(service, dt)
+        self.assertEqual(data['last_run']['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], True)
+
+        dt2 = now + timedelta(minutes=2, seconds=3)
+        data = self._run_once(service, dt2)
+        self.assertEqual(data['last_run']['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt2.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], False)
+
+        dt3 = now + timedelta(minutes=120, seconds=2)
+        data = self._run_once(service, dt3)
+        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt3.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], True)
+
+        dt4 = now + timedelta(minutes=122, seconds=1)
+        data = self._run_once(service, dt4)
+        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt4.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], False)
+
+        dt5 = now + timedelta(minutes=240, seconds=1)
+        data = self._run_once(service, dt5)
+        self.assertEqual(data['last_run']['ts'], dt5.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt5.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], True)
+
+        self.assertEqual(self.runs, 3)
+
+    def test_new_volume(self):
+        service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30,
+                                 force_run_if_new_volume=True)
+        now = datetime.now().replace(minute=0, second=0)
+        dt = now + timedelta(seconds=1)
+        data = self._run_once(service, dt, volume_labels=['vol1'])
+        self.assertEqual(data['last_run']['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], True)
+
+        dt2 = now + timedelta(minutes=1, seconds=1)
+        data = self._run_once(service, dt2, volume_labels=['vol1'])
+        self.assertEqual(data['last_run']['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt2.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], False)
+
+        dt3 = now + timedelta(minutes=2, seconds=2)
+        data = self._run_once(service, dt3, volume_labels=['vol1', 'vol2'])
+        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt3.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], True)
+
+    def test_new_volume2(self):
+        service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30,
+                                 force_run_if_new_volume=True)
+        now = datetime.now().replace(minute=0, second=0)
+        dt = now + timedelta(seconds=1)
+        data = self._run_once(service, dt, volume_labels=['vol1'])
+        self.assertEqual(data['last_run']['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], True)
+
+        dt2 = now + timedelta(minutes=120, seconds=1)
+        data = self._run_once(service, dt2, volume_labels=['vol1', 'vol2'], is_fullscreen=True)
+        self.assertEqual(data['last_run']['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt2.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], False)
+
+        dt3 = now + timedelta(minutes=122, seconds=2)
+        data = self._run_once(service, dt3, volume_labels=['vol1', 'vol2'])
+        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt3.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], True)
+
+    def test_min_uptime(self):
+        service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30, min_uptime=180)
+        now = datetime.now().replace(minute=0, second=0)
+        dt = now + timedelta(seconds=1)
+        data = self._run_once(service, dt)
+        self.assertEqual(data['last_run'], None)
+        self.assertEqual(data['attempts'][-1]['ts'], dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], False)
+
+        dt2 = now + timedelta(minutes=2, seconds=1)
+        data = self._run_once(service, dt2)
+        self.assertEqual(data['last_run'], None)
+        self.assertEqual(data['attempts'][-1]['ts'], dt2.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], False)
+
+        dt3 = now + timedelta(minutes=4, seconds=2)
+        data = self._run_once(service, dt3)
+        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
+        self.assertEqual(data['attempts'][-1]['ts'], dt3.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], True)
