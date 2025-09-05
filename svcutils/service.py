@@ -262,7 +262,7 @@ class Service:
         self.requires_online = requires_online
         self.force_run_if_new_volume = force_run_if_new_volume
         self.max_cpu_percent = max_cpu_percent
-        self.tracker_file = os.path.join(self.work_dir, 'tracker.json')
+        self.tracker_file = os.path.join(self.work_dir, '.tracker.json')
         self.tracker_data = self._load_tracker_data()
         self.uptime_precision = int(ceil(self.update_delta * 1.5))
         self.check_delta = self.min_uptime + self.uptime_precision if self.min_uptime else None
