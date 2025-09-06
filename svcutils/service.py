@@ -288,6 +288,7 @@ class Service:
             'dt': now.isoformat(),
             'is_online': is_online() if self.requires_online else None,
             'volume_labels': get_volume_labels() if self.trigger_on_volume_change else None,
+            'code': None,
             'run': False,
         }
 
@@ -301,20 +302,18 @@ class Service:
                 json.dump(self.tracker_data, fd, indent=4, sort_keys=True)
 
     def _check_new_volume(self):
-        def get_labels(attempt):
-            return set(attempt['volume_labels'] or [])
-
         if not self.trigger_on_volume_change:
             return False
-        try:
-            current_labels = get_labels(self.tracker_data['attempts'][-1])
-        except IndexError:
+        if not self.tracker_data['last_run'] or not self.tracker_data['attempts']:
             return False
-        try:
-            last_run_labels = get_labels(self.tracker_data['last_run'])
-        except IndexError:
-            return False
-        return not current_labels.issubset(last_run_labels)
+        current_volumes = set(self.tracker_data['attempts'][-1]['volume_labels'] or [])
+        dedup_attempts_tuples = set(tuple(sorted(a['volume_labels'] or []))
+                                    for a in reversed(self.tracker_data['attempts'])
+                                    if a['ts'] >= self.tracker_data['last_run']['ts'])
+        for v in dedup_attempts_tuples:
+            if not current_volumes.issubset(set(v)):
+                return True
+        return False
 
     def _check_uptime(self):
         if not self.check_delta:
@@ -333,14 +332,18 @@ class Service:
         with self.update_tracker():
             if not force:
                 last_run_ts = self.tracker_data['last_run']['ts'] if self.tracker_data['last_run'] else 0
-                is_ready = time.time() > last_run_ts + self.run_delta
+                is_ready = time.time() >= last_run_ts + self.run_delta
                 if not (is_ready or self._check_new_volume()):
+                    self.tracker_data['attempts'][-1]['code'] = 'not_ready'
                     return False
                 if not self._check_uptime():
+                    self.tracker_data['attempts'][-1]['code'] = 'uptime_too_low'
                     return False
                 if is_fullscreen():
+                    self.tracker_data['attempts'][-1]['code'] = 'fullscreen'
                     return False
                 if not check_cpu_percent(self.max_cpu_percent):
+                    self.tracker_data['attempts'][-1]['code'] = 'high_cpu_usage'
                     return False
             self.tracker_data['attempts'][-1]['run'] = True
             self.tracker_data['last_run'] = self.tracker_data['attempts'][-1]

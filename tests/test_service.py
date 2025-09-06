@@ -153,6 +153,7 @@ class ServiceTestCase(unittest.TestCase):
         remove_path(WORK_DIR)
         os.makedirs(WORK_DIR)
         self.runs = 0
+        self.now = datetime.now().replace(minute=0, second=0)
 
     def _target(self):
         self.runs += 1
@@ -186,70 +187,102 @@ class ServiceTestCase(unittest.TestCase):
         self.assertEqual(data, {'attempts': [], 'last_run': None})
 
     def test_default(self):
-        now = datetime.now().replace(minute=0, second=0)
-        dt = now + timedelta(seconds=1)
+        dt = self.now
         data = self._run_once(dt)
         self._check_data(data, last_run_dt=dt, last_attempt_dt=dt, last_attempt_run=True)
 
-        dt2 = now + timedelta(minutes=2, seconds=3)
+        dt2 = self.now + timedelta(minutes=2)
         data = self._run_once(dt2)
         self._check_data(data, last_run_dt=dt, last_attempt_dt=dt2, last_attempt_run=False)
 
-        dt3 = now + timedelta(minutes=120, seconds=2)
+        dt3 = self.now + timedelta(minutes=120)
         data = self._run_once(dt3)
         self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
 
-        dt4 = now + timedelta(minutes=122, seconds=1)
+        dt4 = self.now + timedelta(minutes=122)
         data = self._run_once(dt4)
         self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt4, last_attempt_run=False)
 
-        dt5 = now + timedelta(minutes=240, seconds=1)
+        dt5 = self.now + timedelta(minutes=240)
         data = self._run_once(dt5)
         self._check_data(data, last_run_dt=dt5, last_attempt_dt=dt5, last_attempt_run=True)
 
         self.assertEqual(self.runs, 3)
 
-    def test_new_volume(self):
+    def test_no_volume_change(self):
         service_args = {'trigger_on_volume_change': True}
-        now = datetime.now().replace(minute=0, second=0)
-        dt = now + timedelta(seconds=1)
+        dt = self.now
         data = self._run_once(dt, service_args, volume_labels=['vol1'])
         self._check_data(data, last_run_dt=dt, last_attempt_dt=dt, last_attempt_run=True)
 
-        dt2 = now + timedelta(minutes=1, seconds=1)
+        dt2 = self.now + timedelta(minutes=2)
         data = self._run_once(dt2, service_args, volume_labels=['vol1'])
         self._check_data(data, last_run_dt=dt, last_attempt_dt=dt2, last_attempt_run=False)
 
-        dt3 = now + timedelta(minutes=2, seconds=2)
-        data = self._run_once(dt3, service_args, volume_labels=['vol1', 'vol2'])
-        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
+        dt3 = self.now + timedelta(minutes=4)
+        data = self._run_once(dt3, service_args, volume_labels=['vol1'])
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt3, last_attempt_run=False)
 
-    def test_new_volume2(self):
+    def test_new_volume(self):
         service_args = {'trigger_on_volume_change': True}
-        now = datetime.now().replace(minute=0, second=0)
-        dt = now + timedelta(seconds=1)
+        dt = self.now
         data = self._run_once(dt, service_args, volume_labels=['vol1'])
         self._check_data(data, last_run_dt=dt, last_attempt_dt=dt, last_attempt_run=True)
 
-        dt2 = now + timedelta(minutes=120, seconds=1)
-        data = self._run_once(dt2, service_args, volume_labels=['vol1', 'vol2'], is_fullscreen=True)
+        dt2 = self.now + timedelta(minutes=2)
+        data = self._run_once(dt2, service_args, volume_labels=['vol1'])
         self._check_data(data, last_run_dt=dt, last_attempt_dt=dt2, last_attempt_run=False)
 
-        dt3 = now + timedelta(minutes=122, seconds=2)
+        dt3 = self.now + timedelta(minutes=4)
         data = self._run_once(dt3, service_args, volume_labels=['vol1', 'vol2'])
         self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
 
+    def test_new_volume_multiple_attempts(self):
+        service_args = {'trigger_on_volume_change': True}
+        dt = self.now
+        data = self._run_once(dt, service_args, volume_labels=['vol1'])
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt, last_attempt_run=True)
+
+        dt2 = self.now + timedelta(minutes=2)
+        data = self._run_once(dt2, service_args, volume_labels=['vol1', 'vol2'], is_fullscreen=True)
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt2, last_attempt_run=False)
+
+        dt3 = self.now + timedelta(minutes=4)
+        data = self._run_once(dt3, service_args, volume_labels=['vol1', 'vol2'])
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
+
+        dt4 = self.now + timedelta(minutes=6)
+        data = self._run_once(dt4, service_args, volume_labels=['vol1'])
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt4, last_attempt_run=False)
+
+    def test_new_volume_retry(self):
+        service_args = {'trigger_on_volume_change': True}
+        dt = self.now
+        data = self._run_once(dt, service_args, volume_labels=['vol1', 'vol2'])
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt, last_attempt_run=True)
+
+        dt2 = self.now + timedelta(minutes=2)
+        data = self._run_once(dt2, service_args, volume_labels=['vol1'])
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt2, last_attempt_run=False)
+
+        dt3 = self.now + timedelta(minutes=4)
+        data = self._run_once(dt3, service_args, volume_labels=['vol1', 'vol2'])
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
+
+        dt4 = self.now + timedelta(minutes=6)
+        data = self._run_once(dt4, service_args, volume_labels=['vol1'])
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt4, last_attempt_run=False)
+
     def test_min_uptime(self):
         service_args = {'min_uptime': 180}
-        now = datetime.now().replace(minute=0, second=0)
-        dt = now + timedelta(seconds=1)
+        dt = self.now
         data = self._run_once(dt, service_args)
         self._check_data(data, last_run_dt=None, last_attempt_dt=dt, last_attempt_run=False)
 
-        dt2 = now + timedelta(minutes=2, seconds=1)
+        dt2 = self.now + timedelta(minutes=2)
         data = self._run_once(dt2, service_args)
         self._check_data(data, last_run_dt=None, last_attempt_dt=dt2, last_attempt_run=False)
 
-        dt3 = now + timedelta(minutes=4, seconds=2)
+        dt3 = self.now + timedelta(minutes=4)
         data = self._run_once(dt3, service_args)
         self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
