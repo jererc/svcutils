@@ -251,7 +251,7 @@ class RunFile:
 class Service:
     def __init__(self, target, work_dir, args=None, kwargs=None, run_delta=60,
                  min_uptime=None, attempt_delta=120, requires_online=False,
-                 trigger_on_new_volume=False, max_cpu_percent=None):
+                 trigger_on_volume_change=False, max_cpu_percent=None):
         self.target = target
         self.work_dir = work_dir
         self.args = args or ()
@@ -260,7 +260,7 @@ class Service:
         self.min_uptime = min_uptime
         self.attempt_delta = attempt_delta
         self.requires_online = requires_online
-        self.trigger_on_new_volume = trigger_on_new_volume
+        self.trigger_on_volume_change = trigger_on_volume_change
         self.max_cpu_percent = max_cpu_percent
         self.tracker_file = os.path.join(self.work_dir, '.svc.json')
         self.tracker_data = self._load_tracker_data()
@@ -287,7 +287,7 @@ class Service:
             'ts': now.timestamp(),
             'dt': now.isoformat(),
             'is_online': is_online() if self.requires_online else None,
-            'volume_labels': get_volume_labels() if self.trigger_on_new_volume else None,
+            'volume_labels': get_volume_labels() if self.trigger_on_volume_change else None,
             'run': False,
         }
 
@@ -304,7 +304,7 @@ class Service:
         def get_labels(attempt):
             return set(attempt['volume_labels'] or [])
 
-        if not self.trigger_on_new_volume:
+        if not self.trigger_on_volume_change:
             return False
         try:
             current_labels = get_labels(self.tracker_data['attempts'][-1])

@@ -157,9 +157,10 @@ class ServiceTestCase(unittest.TestCase):
     def _target(self):
         self.runs += 1
 
-    def _run_once(self, service, now, volume_labels=None, is_fullscreen=False):
+    def _run_once(self, now, service_args=None, volume_labels=None, is_fullscreen=False):
         print('*' * 80)
         print(f'running at {now=}')
+        service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30, **(service_args or {}))
         with patch('svcutils.service.datetime') as mock_datetime, \
                 patch('svcutils.service.time.time', return_value=now.timestamp()), \
                 patch('svcutils.service.is_fullscreen', return_value=is_fullscreen), \
@@ -170,105 +171,85 @@ class ServiceTestCase(unittest.TestCase):
         pprint(data)
         return data
 
-    def test_default(self):
+    def _check_data(self, data, last_run_dt, last_attempt_dt, last_attempt_run=True):
+        if last_run_dt:
+            self.assertEqual(data['last_run']['ts'], last_run_dt.timestamp())
+        else:
+            self.assertEqual(data['last_run'], None)
+        self.assertEqual(data['attempts'][-1]['ts'], last_attempt_dt.timestamp())
+        self.assertEqual(data['attempts'][-1]['run'], last_attempt_run)
+        self.assertEqual(data['attempts'][-1]['dt'], last_attempt_dt.isoformat())
+
+    def test_init(self):
         service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30)
         data = service._load_tracker_data()
         self.assertEqual(data, {'attempts': [], 'last_run': None})
 
+    def test_default(self):
         now = datetime.now().replace(minute=0, second=0)
         dt = now + timedelta(seconds=1)
-        data = self._run_once(service, dt)
-        self.assertEqual(data['last_run']['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], True)
+        data = self._run_once(dt)
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt, last_attempt_run=True)
 
         dt2 = now + timedelta(minutes=2, seconds=3)
-        data = self._run_once(service, dt2)
-        self.assertEqual(data['last_run']['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt2.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], False)
+        data = self._run_once(dt2)
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt2, last_attempt_run=False)
 
         dt3 = now + timedelta(minutes=120, seconds=2)
-        data = self._run_once(service, dt3)
-        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt3.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], True)
+        data = self._run_once(dt3)
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
 
         dt4 = now + timedelta(minutes=122, seconds=1)
-        data = self._run_once(service, dt4)
-        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt4.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], False)
+        data = self._run_once(dt4)
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt4, last_attempt_run=False)
 
         dt5 = now + timedelta(minutes=240, seconds=1)
-        data = self._run_once(service, dt5)
-        self.assertEqual(data['last_run']['ts'], dt5.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt5.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], True)
+        data = self._run_once(dt5)
+        self._check_data(data, last_run_dt=dt5, last_attempt_dt=dt5, last_attempt_run=True)
 
         self.assertEqual(self.runs, 3)
 
     def test_new_volume(self):
-        service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30,
-                                 trigger_on_new_volume=True)
+        service_args = {'trigger_on_volume_change': True}
         now = datetime.now().replace(minute=0, second=0)
         dt = now + timedelta(seconds=1)
-        data = self._run_once(service, dt, volume_labels=['vol1'])
-        self.assertEqual(data['last_run']['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], True)
+        data = self._run_once(dt, service_args, volume_labels=['vol1'])
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt, last_attempt_run=True)
 
         dt2 = now + timedelta(minutes=1, seconds=1)
-        data = self._run_once(service, dt2, volume_labels=['vol1'])
-        self.assertEqual(data['last_run']['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt2.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], False)
+        data = self._run_once(dt2, service_args, volume_labels=['vol1'])
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt2, last_attempt_run=False)
 
         dt3 = now + timedelta(minutes=2, seconds=2)
-        data = self._run_once(service, dt3, volume_labels=['vol1', 'vol2'])
-        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt3.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], True)
+        data = self._run_once(dt3, service_args, volume_labels=['vol1', 'vol2'])
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
 
     def test_new_volume2(self):
-        service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30,
-                                 trigger_on_new_volume=True)
+        service_args = {'trigger_on_volume_change': True}
         now = datetime.now().replace(minute=0, second=0)
         dt = now + timedelta(seconds=1)
-        data = self._run_once(service, dt, volume_labels=['vol1'])
-        self.assertEqual(data['last_run']['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], True)
+        data = self._run_once(dt, service_args, volume_labels=['vol1'])
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt, last_attempt_run=True)
 
         dt2 = now + timedelta(minutes=120, seconds=1)
-        data = self._run_once(service, dt2, volume_labels=['vol1', 'vol2'], is_fullscreen=True)
-        self.assertEqual(data['last_run']['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt2.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], False)
+        data = self._run_once(dt2, service_args, volume_labels=['vol1', 'vol2'], is_fullscreen=True)
+        self._check_data(data, last_run_dt=dt, last_attempt_dt=dt2, last_attempt_run=False)
 
         dt3 = now + timedelta(minutes=122, seconds=2)
-        data = self._run_once(service, dt3, volume_labels=['vol1', 'vol2'])
-        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt3.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], True)
+        data = self._run_once(dt3, service_args, volume_labels=['vol1', 'vol2'])
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
 
     def test_min_uptime(self):
-        service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30, min_uptime=180)
+        service_args = {'min_uptime': 180}
         now = datetime.now().replace(minute=0, second=0)
         dt = now + timedelta(seconds=1)
-        data = self._run_once(service, dt)
-        self.assertEqual(data['last_run'], None)
-        self.assertEqual(data['attempts'][-1]['ts'], dt.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], False)
+        data = self._run_once(dt, service_args)
+        self._check_data(data, last_run_dt=None, last_attempt_dt=dt, last_attempt_run=False)
 
         dt2 = now + timedelta(minutes=2, seconds=1)
-        data = self._run_once(service, dt2)
-        self.assertEqual(data['last_run'], None)
-        self.assertEqual(data['attempts'][-1]['ts'], dt2.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], False)
+        data = self._run_once(dt2, service_args)
+        self._check_data(data, last_run_dt=None, last_attempt_dt=dt2, last_attempt_run=False)
 
         dt3 = now + timedelta(minutes=4, seconds=2)
-        data = self._run_once(service, dt3)
-        self.assertEqual(data['last_run']['ts'], dt3.timestamp())
-        self.assertEqual(data['attempts'][-1]['ts'], dt3.timestamp())
-        self.assertEqual(data['attempts'][-1]['run'], True)
+        data = self._run_once(dt3, service_args)
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3, last_attempt_run=True)
