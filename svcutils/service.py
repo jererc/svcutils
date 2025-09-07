@@ -292,14 +292,24 @@ class Service:
             'run': False,
         }
 
+    def _save_tracker_data(self):
+        with open(self.tracker_file, 'w') as fd:
+            json.dump(self.tracker_data, fd, indent=4, sort_keys=True)
+
     @contextlib.contextmanager
-    def update_tracker(self):
-        self.tracker_data['attempts'] = self._get_tracker_attempts_history() + [self._generate_tracker_attempt()]
+    def _update_tracker_data(self, new_attempt=True):
+        if new_attempt:
+            self.tracker_data['attempts'] = self._get_tracker_attempts_history() + [self._generate_tracker_attempt()]
         try:
             yield
         finally:
-            with open(self.tracker_file, 'w') as fd:
-                json.dump(self.tracker_data, fd, indent=4, sort_keys=True)
+            self._save_tracker_data()
+
+    def _update_attempt(self, **kwargs):
+        self.tracker_data['attempts'][-1].update(kwargs)
+
+    def _update_last_run(self):
+        self.tracker_data['last_run'] = self.tracker_data['attempts'][-1]
 
     def _check_new_volume(self):
         if not (self.trigger_on_volume_change and self.tracker_data['last_run'] and self.tracker_data['attempts']):
@@ -327,30 +337,35 @@ class Service:
         return res
 
     def _must_run(self, force=False):
-        with self.update_tracker():
+        with self._update_tracker_data(new_attempt=True):
             if not force:
                 last_run_ts = self.tracker_data['last_run']['ts'] if self.tracker_data['last_run'] else 0
                 is_ready = time.time() >= last_run_ts + self.run_delta
                 if not (is_ready or self._check_new_volume()):
-                    self.tracker_data['attempts'][-1]['code'] = 'not_ready'
+                    self._update_attempt(code='not_ready')
                     return False
                 if not self._check_uptime():
-                    self.tracker_data['attempts'][-1]['code'] = 'uptime_too_low'
+                    self._update_attempt(code='uptime_too_low')
                     return False
                 if is_fullscreen():
-                    self.tracker_data['attempts'][-1]['code'] = 'fullscreen'
+                    self._update_attempt(code='fullscreen')
                     return False
                 if not check_cpu_percent(self.max_cpu_percent):
-                    self.tracker_data['attempts'][-1]['code'] = 'high_cpu_usage'
+                    self._update_attempt(code='high_cpu_usage')
                     return False
-            self.tracker_data['attempts'][-1]['run'] = True
-            self.tracker_data['last_run'] = self.tracker_data['attempts'][-1]
+            self._update_attempt(run=True)
+            self._update_last_run()
             return True
 
     def _attempt_run(self, force=False):
         try:
             if self._must_run(force):
                 self.target(*self.args, **self.kwargs)
+                if self.tracker_data['last_run']:
+                    with self._update_tracker_data(new_attempt=False):
+                        now = datetime.now()
+                        self._update_attempt(end_ts=now.timestamp(), end_dt=now.isoformat())
+                        self._update_last_run()
         except Exception:
             logger.exception('service failed')
 
