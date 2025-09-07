@@ -289,7 +289,6 @@ class Service:
             'is_online': is_online() if self.requires_online else None,
             'volume_labels': get_volume_labels() if self.trigger_on_volume_change else None,
             'code': None,
-            'run': False,
         }
 
     def _save_tracker_data(self):
@@ -353,7 +352,7 @@ class Service:
                 if not check_cpu_percent(self.max_cpu_percent):
                     self._update_attempt(code='high_cpu_usage')
                     return False
-            self._update_attempt(run=True)
+            self._update_attempt(code='ready')
             self._update_last_run()
             return True
 
