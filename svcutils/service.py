@@ -138,7 +138,7 @@ def is_online(host='8.8.8.8', port=53, timeout=3):
 
 def check_cpu_percent(max_percent, interval=1):
     if max_percent and psutil.cpu_percent(interval=interval) > max_percent:
-        logger.info(f'cpu usage is greater than {max_percent}%')
+        logger.info(f'cpu usage is higher than {max_percent}%')
         return False
     return True
 
@@ -302,16 +302,14 @@ class Service:
                 json.dump(self.tracker_data, fd, indent=4, sort_keys=True)
 
     def _check_new_volume(self):
-        if not self.trigger_on_volume_change:
-            return False
-        if not self.tracker_data['last_run'] or not self.tracker_data['attempts']:
+        if not (self.trigger_on_volume_change and self.tracker_data['last_run'] and self.tracker_data['attempts']):
             return False
         current_volumes = set(self.tracker_data['attempts'][-1]['volume_labels'] or [])
         dedup_attempts_tuples = set(tuple(sorted(a['volume_labels'] or []))
                                     for a in reversed(self.tracker_data['attempts'])
                                     if a['ts'] >= self.tracker_data['last_run']['ts'])
-        for v in dedup_attempts_tuples:
-            if not current_volumes.issubset(set(v)):
+        for t in dedup_attempts_tuples:
+            if not current_volumes.issubset(set(t)):
                 return True
         return False
 
