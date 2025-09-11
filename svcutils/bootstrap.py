@@ -5,7 +5,6 @@ import subprocess
 import sys
 import urllib.request
 
-
 HOME_DIR = os.path.expanduser('~')
 ADMIN_DIR = {'win32': os.getenv('WINDIR', r'C:\Windows'),
              'linux': '/root'}[sys.platform]

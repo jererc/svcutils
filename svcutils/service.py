@@ -17,7 +17,6 @@ import psutil
 
 from svcutils.bootstrap import get_app_dir, get_work_dir   # keep in bootstrap, import from service
 
-
 LOCK_FILENAME = '.svc.lock'
 
 logger = logging.getLogger(__name__)

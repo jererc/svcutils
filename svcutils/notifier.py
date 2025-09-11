@@ -7,7 +7,6 @@ import sys
 
 from svcutils.service import get_display_env
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -7,7 +7,6 @@ from unittest.mock import patch
 from tests import WORK_DIR
 from svcutils import bootstrap as module
 
-
 NAME = '__TEST__'
 
 

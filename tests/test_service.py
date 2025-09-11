@@ -11,7 +11,6 @@ from unittest.mock import patch
 from tests import WORK_DIR
 from svcutils import service as module
 
-
 logger = logging.getLogger(__name__)
 
 
