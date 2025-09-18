@@ -118,8 +118,7 @@ def _is_fullscreen_linux():
 
 def is_fullscreen():
     try:
-        return {'win32': _is_fullscreen_windows,
-                'linux': _is_fullscreen_linux}[sys.platform]()
+        return {'linux': _is_fullscreen_linux, 'win32': _is_fullscreen_windows}[sys.platform]()
     except Exception:
         logger.exception('failed to check fullscreen')
         return False
@@ -173,8 +172,7 @@ def _list_linux_mountpoint_labels():
 
 def list_mountpoint_labels():
     try:
-        return {'win32': _list_windows_mountpoint_labels,
-                'linux': _list_linux_mountpoint_labels}[sys.platform]()
+        return {'linux': _list_linux_mountpoint_labels, 'win32': _list_windows_mountpoint_labels}[sys.platform]()
     except Exception:
         logger.exception('failed to list mountpoint labels')
         return {}

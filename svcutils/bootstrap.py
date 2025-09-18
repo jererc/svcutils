@@ -6,17 +6,17 @@ import sys
 import urllib.request
 
 HOME_DIR = os.path.expanduser('~')
-ADMIN_DIR = {'win32': os.getenv('WINDIR', r'C:\Windows'),
-             'linux': '/root'}[sys.platform]
-APP_DATA_DIR = {'win32': os.getenv('APPDATA', os.path.join(HOME_DIR, 'AppData', 'Roaming')),
-                'linux': os.path.join(os.getenv('HOME', HOME_DIR), '.local', 'share')}[sys.platform]
-APP_DIR = {'win32': os.path.join(APP_DATA_DIR, r'Microsoft\Windows\Start Menu\Programs'),
-           'linux': os.path.join(APP_DATA_DIR, 'applications')}[sys.platform]
+ADMIN_DIR = {'linux': '/root',
+             'win32': os.getenv('WINDIR', r'C:\Windows')}[sys.platform]
+APP_DATA_DIR = {'linux': os.path.join(os.getenv('HOME', HOME_DIR), '.local', 'share'),
+                'win32': os.getenv('APPDATA', os.path.join(HOME_DIR, 'AppData', 'Roaming'))}[sys.platform]
+APP_DIR = {'linux': os.path.join(APP_DATA_DIR, 'applications'),
+           'win32': os.path.join(APP_DATA_DIR, r'Microsoft\Windows\Start Menu\Programs')}[sys.platform]
 VENV_DIRNAME = 'venv'
-VENV_BIN_DIRNAME = {'win32': 'Scripts', 'linux': 'bin'}[sys.platform]
-VENV_PIP_PATH = {'win32': 'pip.exe', 'linux': 'pip'}[sys.platform]
-VENV_PY_PATH = {'win32': 'python.exe', 'linux': 'python'}[sys.platform]
-VENV_SVC_PY_PATH = {'win32': 'pythonw.exe', 'linux': 'python'}[sys.platform]
+VENV_BIN_DIRNAME = {'linux': 'bin', 'win32': 'Scripts'}[sys.platform]
+VENV_PIP_PATH = {'linux': 'pip', 'win32': 'pip.exe'}[sys.platform]
+VENV_PY_PATH = {'linux': 'python', 'win32': 'python.exe'}[sys.platform]
+VENV_SVC_PY_PATH = {'linux': 'python', 'win32': 'pythonw.exe'}[sys.platform]
 
 
 def get_valid_cwd():

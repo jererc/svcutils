@@ -80,15 +80,13 @@ class LinuxNotifier:
 
 def notify(*args, **kwargs):
     try:
-        {'win32': WindowsNotifier,
-         'linux': LinuxNotifier}[sys.platform]().send(*args, **kwargs)
+        {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform]().send(*args, **kwargs)
     except Exception:
         logger.exception('failed to send notification')
 
 
 def clear_notification(*args, **kwargs):
     try:
-        {'win32': WindowsNotifier,
-         'linux': LinuxNotifier}[sys.platform]().clear(*args, **kwargs)
+        {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform]().clear(*args, **kwargs)
     except Exception:
         logger.exception('failed to clear notification')
