@@ -20,7 +20,10 @@ class WindowsNotifier:
 
     def clear(self, app_name, replace_key):
         from win11toast import clear_toast
-        clear_toast(app_id=app_name, tag=replace_key, group=app_name)
+        try:
+            clear_toast(app_id=app_name, tag=replace_key, group=app_name)
+        except Exception:
+            logger.exception(f'failed to clear notification for {app_name=} {replace_key=}')
 
 
 class LinuxNotifier:
