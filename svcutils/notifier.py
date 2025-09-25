@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 class WindowsNotifier:
     def send(self, title, body, app_name=None, on_click=None, replace_key=None):
         from win11toast import notify as _notify
-        if replace_key:
-            self.clear(app_name, replace_key)
+        # if replace_key:
+        #     self.clear(app_name, replace_key)
         _notify(title=title, body=body, app_id=app_name, on_click=on_click,
                 tag=replace_key, group=app_name)
 
@@ -78,7 +78,7 @@ class LinuxNotifier:
         try:
             subprocess.check_output(cmd, env=env, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            logger.warning(f'failed to clear notification: {e.output}')
+            logger.warning(f'failed to clear notification for {app_name=} {replace_key=}: {e.output}')
 
 
 def notify(*args, **kwargs):
