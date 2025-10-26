@@ -288,3 +288,29 @@ class ServiceTestCase(unittest.TestCase):
         dt3 = self.now + timedelta(minutes=4)
         data = self._run_once(dt3, service_args)
         self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3)
+
+    def test_long_run(self):
+        service_args = {'min_uptime': 180, 'trigger_on_volume_change': True}
+
+        dt1 = self.now
+        data = self._run_once(dt1, service_args)
+        self._check_data(data, last_run_dt=None, last_attempt_dt=dt1)
+
+        dt2 = self.now + timedelta(minutes=2)
+        data = self._run_once(dt2, service_args)
+        self._check_data(data, last_run_dt=None, last_attempt_dt=dt2)
+
+        dt3 = self.now + timedelta(minutes=4)
+        data = self._run_once(dt3, service_args, volume_labels=['vol1', 'vol2'])
+        self._check_data(data, last_run_dt=dt3, last_attempt_dt=dt3)
+
+        service = module.Service(target=self._target, work_dir=WORK_DIR, run_delta=60 * 30, **service_args)
+        end_dt = dt3 + timedelta(minutes=6)
+        update = {'end_ts': end_dt.timestamp(), 'end_dt': end_dt.isoformat()}
+        service.tracker_data['last_run'].update(update)
+        service.tracker_data['attempts'][-1].update(update)
+        service._save_tracker_data()
+
+        dt4 = end_dt + timedelta(minutes=2)
+        data = self._run_once(dt4, service_args, volume_labels=['vol1', 'vol3'])
+        self._check_data(data, last_run_dt=dt4, last_attempt_dt=dt4)

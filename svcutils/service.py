@@ -323,6 +323,8 @@ class Service:
         if not self.check_delta:
             return True
         now = time.time()
+        if self.tracker_data['last_run'] and now - self.tracker_data['last_run'].get('end_ts', 0) < self.check_delta:
+            return True
         tds = [int(i['ts'] - now) for i in self.tracker_data['attempts']
                if i['ts'] > now - self.check_delta and (i['is_online'] or not self.requires_online)]
         values = {int((r + self.check_delta) // self.uptime_precision) for r in tds}
