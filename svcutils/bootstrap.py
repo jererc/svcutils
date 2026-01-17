@@ -202,12 +202,11 @@ objShortcut.Save
         print(f'created shortcut: {file}')
 
     def setup_script_shortcut(self, name, args):
-        py_path = self.py_path if self.cmd_terminal else self.svc_py_path
-        args_str = ' '.join(args)
+        args_str = f'-m {" ".join(args)}'
         if sys.platform == 'win32':
             file = os.path.join(APP_DIR, f'{name}.lnk')
             self._create_windows_shortcut(
-                target_path=py_path,
+                target_path=self.py_path,
                 shortcut_path=file,
                 arguments=args_str,
                 working_dir=self.cwd,
@@ -217,7 +216,7 @@ objShortcut.Save
             file = os.path.join(APP_DIR, f'{name}.desktop')
             self._create_linux_shortcut(
                 name=name,
-                cmd=f'{py_path} -m {args_str}',
+                cmd=f'{self.py_path} {args_str}',
                 shortcut_path=file,
                 description=name,
             )
