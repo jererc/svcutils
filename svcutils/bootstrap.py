@@ -193,40 +193,7 @@ Comment={description}
     def _setup(self):
         self._setup_venv()
         self._download_assets()
-        for kwargs in self.shortcuts:
-            self._setup_shortcut(**kwargs)
         for kwargs in self.tasks:
             self._setup_task(**kwargs)
-
-    # def _get_cmd(self):
-    #     if not self.cmd_args:
-    #         raise SystemExit('Error: missing cmd_args')
-    #     return [self.svc_py_path, '-m'] + self.cmd_args
-
-    # def setup_shortcut(self):
-    #     cmd = self._get_cmd()
-    #     if sys.platform == 'win32':
-    #         file = os.path.join(APP_DIR, f'{self.name}.lnk')
-    #         self._create_windows_shortcut(
-    #             target_path=cmd[0],
-    #             shortcut_path=file,
-    #             arguments=' '.join(cmd[1:]),
-    #             working_dir=self.cwd,
-    #             description=self.name,
-    #         )
-    #     else:
-    #         file = os.path.join(APP_DIR, f'{self.name}.desktop')
-    #         self._create_linux_shortcut(
-    #             name=self.name,
-    #             cmd=' '.join(cmd),
-    #             shortcut_path=file,
-    #             description=self.name,
-    #         )
-    #     print(f'created shortcut: {file}')
-
-    # def setup_task(self):
-    #     cmd = ' '.join(self._get_cmd())
-    #     if sys.platform == 'win32':
-    #         self._setup_windows_task(cmd=cmd, task_name=self.name)
-    #     else:
-    #         self._setup_linux_crontab(cmd=cmd)
+        for kwargs in self.shortcuts:
+            self._setup_shortcut(**kwargs)
