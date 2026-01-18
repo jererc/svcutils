@@ -79,64 +79,11 @@ class Bootstrapper:
         if self.extra_cmds:
             self._run_venv_cmds(self.extra_cmds)
 
-    def _download_assets(self):
-        for filename, url in self.download_assets:
-            file = os.path.join(self.cwd, filename)
-            if not os.path.exists(file):
-                urllib.request.urlretrieve(url, file)
-                print(f'created asset: {file}')
-
-    def _create_windows_shortcut(self, target_path, shortcut_path, arguments='', working_dir='', description=''):
-        vbs_content = f"""Set objShell = WScript.CreateObject("WScript.Shell")
-Set objShortcut = objShell.CreateShortcut("{shortcut_path}")
-objShortcut.TargetPath = "{target_path}"
-objShortcut.Arguments = "{arguments}"
-objShortcut.WorkingDirectory = "{working_dir or os.path.dirname(target_path)}"
-objShortcut.Description = "{description}"
-objShortcut.Save
-"""
-        temp_file = os.path.join(self.cwd, 'temp.vbs')
-        with open(temp_file, 'w') as fd:
-            fd.write(vbs_content)
-        try:
-            os.system(f'cscript //NoLogo "{temp_file}"')
-        finally:
-            os.remove(temp_file)
-
-    def _create_linux_shortcut(self, name, cmd, shortcut_path, description=''):
-        os.makedirs(os.path.dirname(shortcut_path), exist_ok=True)
-        content = f"""[Desktop Entry]
-Type=Application
-Name={name}
-Exec={cmd}
-Terminal=true
-Comment={description}
-"""
-        with open(shortcut_path, 'w') as fd:
-            fd.write(content)
-        subprocess.check_call(['chmod', '+x', shortcut_path])
-
-    def _setup_shortcut(self, name, args, headless=True):
-        py_path = self.svc_py_path if headless else self.py_path
-        args_str = f'-m {" ".join(args)}'
-        if sys.platform == 'win32':
-            file = os.path.join(APP_DIR, f'{name}.lnk')
-            self._create_windows_shortcut(
-                target_path=py_path,
-                shortcut_path=file,
-                arguments=args_str,
-                working_dir=self.work_dir,
-                description=name,
-            )
-        else:
-            file = os.path.join(APP_DIR, f'{name}.desktop')
-            self._create_linux_shortcut(
-                name=name,
-                cmd=f'{py_path} {args_str}',
-                shortcut_path=file,
-                description=name,
-            )
-        print(f'created shortcut: {file}')
+    def _download_asset(self, filename, url, dir=None):
+        file = os.path.join(dir or self.cwd, filename)
+        if not os.path.exists(file):
+            urllib.request.urlretrieve(url, file)
+            print(f'created asset: {file}')
 
     def _generate_crontab_schedule(self, schedule_minutes):
         match schedule_minutes:
@@ -190,9 +137,62 @@ Comment={description}
         else:
             self._setup_linux_crontab(cmd=cmd, name=name, schedule_minutes=schedule_minutes)
 
+    def _create_windows_shortcut(self, target_path, shortcut_path, arguments='', working_dir='', description=''):
+        vbs_content = f"""Set objShell = WScript.CreateObject("WScript.Shell")
+Set objShortcut = objShell.CreateShortcut("{shortcut_path}")
+objShortcut.TargetPath = "{target_path}"
+objShortcut.Arguments = "{arguments}"
+objShortcut.WorkingDirectory = "{working_dir or os.path.dirname(target_path)}"
+objShortcut.Description = "{description}"
+objShortcut.Save
+"""
+        temp_file = os.path.join(self.cwd, 'temp.vbs')
+        with open(temp_file, 'w') as fd:
+            fd.write(vbs_content)
+        try:
+            os.system(f'cscript //NoLogo "{temp_file}"')
+        finally:
+            os.remove(temp_file)
+
+    def _create_linux_shortcut(self, name, cmd, shortcut_path, description=''):
+        os.makedirs(os.path.dirname(shortcut_path), exist_ok=True)
+        content = f"""[Desktop Entry]
+Type=Application
+Name={name}
+Exec={cmd}
+Terminal=true
+Comment={description}
+"""
+        with open(shortcut_path, 'w') as fd:
+            fd.write(content)
+        subprocess.check_call(['chmod', '+x', shortcut_path])
+
+    def _setup_shortcut(self, name, args, headless=True):
+        py_path = self.svc_py_path if headless else self.py_path
+        args_str = f'-m {" ".join(args)}'
+        if sys.platform == 'win32':
+            file = os.path.join(APP_DIR, f'{name}.lnk')
+            self._create_windows_shortcut(
+                target_path=py_path,
+                shortcut_path=file,
+                arguments=args_str,
+                working_dir=self.work_dir,
+                description=name,
+            )
+        else:
+            file = os.path.join(APP_DIR, f'{name}.desktop')
+            self._create_linux_shortcut(
+                name=name,
+                cmd=f'{py_path} {args_str}',
+                shortcut_path=file,
+                description=name,
+            )
+        print(f'created shortcut: {file}')
+
     def _setup(self):
         self._setup_venv()
-        self._download_assets()
+        for kwargs in self.download_assets:
+            self._download_asset(**kwargs)
         for kwargs in self.tasks:
             self._setup_task(**kwargs)
         for kwargs in self.shortcuts:
