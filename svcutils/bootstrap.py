@@ -167,7 +167,7 @@ Comment={description}
             fd.write(content)
         subprocess.check_call(['chmod', '+x', shortcut_path])
 
-    def _setup_shortcut(self, name, args, headless=True):
+    def _setup_shortcut(self, name, args, headless=False):
         py_path = self.svc_py_path if headless else self.py_path
         args_str = f'-m {" ".join(args)}'
         if sys.platform == 'win32':
