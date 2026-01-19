@@ -7,6 +7,10 @@ from unittest.mock import patch
 from tests import WORK_DIR
 from svcutils import bootstrap as module
 
+module.HOME_DIR = WORK_DIR
+module.ADMIN_DIR = WORK_DIR
+module.APP_DATA_DIR = WORK_DIR
+module.APP_DIR = WORK_DIR
 NAME = '__TEST__'
 
 
@@ -18,7 +22,7 @@ def remove_path(path):
 
 
 def get_bs(*args, **kwargs):
-    with patch('os.makedirs'):
+    with patch.object(module.Bootstrapper, '_setup'):
         return module.Bootstrapper(*args, **kwargs)
 
 
@@ -51,12 +55,12 @@ class BootstrapperTestCase(unittest.TestCase):
 
     def test_attrs(self):
         dirname = f'.{self.args["name"]}'
-        self.assertEqual(self.bs.venv_dir, os.path.join(os.path.expanduser('~'), dirname, module.VENV_DIRNAME))
+        self.assertEqual(self.bs.venv_dir, os.path.join(module.HOME_DIR, dirname, module.VENV_DIRNAME))
         bin_dirname = 'Scripts' if sys.platform == 'win32' else 'bin'
         pip_filename = 'pip.exe' if sys.platform == 'win32' else 'pip'
         py_filename = 'pythonw.exe' if sys.platform == 'win32' else 'python'
-        self.assertEqual(self.bs.pip_path, os.path.join(os.path.expanduser('~'), dirname, module.VENV_DIRNAME, bin_dirname, pip_filename))
-        self.assertEqual(self.bs.svc_py_path, os.path.join(os.path.expanduser('~'), dirname, module.VENV_DIRNAME, bin_dirname, py_filename))
+        self.assertEqual(self.bs.pip_path, os.path.join(module.HOME_DIR, dirname, module.VENV_DIRNAME, bin_dirname, pip_filename))
+        self.assertEqual(self.bs.svc_py_path, os.path.join(module.HOME_DIR, dirname, module.VENV_DIRNAME, bin_dirname, py_filename))
 
     def test_task(self):
         args = ['module.main', 'arg', '--flag']
