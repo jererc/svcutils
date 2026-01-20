@@ -40,7 +40,7 @@ def get_work_dir(name):
 
 class Bootstrapper:
     def __init__(self, name, install_requires=None, force_reinstall=False, init_cmds=None, extra_cmds=None,
-                 tasks=None, shortcuts=None, download_assets=None):
+                 tasks=None, shortcuts=None, assets=None):
         self.name = name
         self.install_requires = install_requires
         self.force_reinstall = force_reinstall
@@ -48,7 +48,7 @@ class Bootstrapper:
         self.extra_cmds = extra_cmds
         self.tasks = tasks or []
         self.shortcuts = shortcuts or []
-        self.download_assets = download_assets or []
+        self.assets = assets or []
         self.cwd = get_valid_cwd()
         self.work_dir = get_work_dir(self.name)
         self.venv_dir = os.path.join(self.work_dir, VENV_DIRNAME)
@@ -79,9 +79,9 @@ class Bootstrapper:
         if self.extra_cmds:
             self._run_venv_cmds(self.extra_cmds)
 
-    def _download_asset(self, filename, url, dir=None):
+    def _setup_asset(self, filename, url, dir=None, overwrite=False):
         file = os.path.join(dir or self.cwd, filename)
-        if not os.path.exists(file):
+        if overwrite or not os.path.exists(file):
             urllib.request.urlretrieve(url, file)
             print(f'created asset: {file}')
 
@@ -191,8 +191,8 @@ Comment={description}
 
     def _setup(self):
         self._setup_venv()
-        for kwargs in self.download_assets:
-            self._download_asset(**kwargs)
+        for kwargs in self.assets:
+            self._setup_asset(**kwargs)
         for kwargs in self.tasks:
             self._setup_task(**kwargs)
         for kwargs in self.shortcuts:
