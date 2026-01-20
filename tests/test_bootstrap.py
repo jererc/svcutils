@@ -47,20 +47,19 @@ class BootstrapperTestCase(unittest.TestCase):
     def setUp(self):
         remove_path(WORK_DIR)
         os.makedirs(WORK_DIR)
-        self.args = {
-            'name': NAME,
-            'tasks': [{'name': 'test', 'args': ['module.main', 'arg', '--flag']}],
-        }
-        self.bs = get_bs(**self.args)
+        self.bs = get_bs(name=NAME)
 
     def test_attrs(self):
-        dirname = f'.{self.args["name"]}'
+        dirname = f'.{self.bs.name}'
+        self.assertEqual(self.bs.work_dir, os.path.join(module.HOME_DIR, dirname))
         self.assertEqual(self.bs.venv_dir, os.path.join(module.HOME_DIR, dirname, module.VENV_DIRNAME))
         bin_dirname = 'Scripts' if sys.platform == 'win32' else 'bin'
         pip_filename = 'pip.exe' if sys.platform == 'win32' else 'pip'
-        py_filename = 'pythonw.exe' if sys.platform == 'win32' else 'python'
+        svc_py_filename = 'pythonw.exe' if sys.platform == 'win32' else 'python'
+        py_filename = 'python.exe' if sys.platform == 'win32' else 'python'
         self.assertEqual(self.bs.pip_path, os.path.join(module.HOME_DIR, dirname, module.VENV_DIRNAME, bin_dirname, pip_filename))
-        self.assertEqual(self.bs.svc_py_path, os.path.join(module.HOME_DIR, dirname, module.VENV_DIRNAME, bin_dirname, py_filename))
+        self.assertEqual(self.bs.svc_py_path, os.path.join(module.HOME_DIR, dirname, module.VENV_DIRNAME, bin_dirname, svc_py_filename))
+        self.assertEqual(self.bs.py_path, os.path.join(module.HOME_DIR, dirname, module.VENV_DIRNAME, bin_dirname, py_filename))
 
     def test_task(self):
         args = ['module.main', 'arg', '--flag']
