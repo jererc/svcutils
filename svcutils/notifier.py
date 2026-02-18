@@ -91,11 +91,11 @@ class TelegramNotifier:
 
     def send(self, title, body, app_name=None, on_click=None, **kwargs):
         url = f'https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage'
-        app_name_text = f'{app_name}: ' if app_name else ''
+        app_name_text = f'{app_name} ({socket.gethostname()}): ' if app_name else ''
         on_click_text = f'\n{on_click}' if on_click else ''
         payload = {
             'chat_id': self.telegram_chat_id,
-            'text': f'{app_name_text} ({socket.gethostname()}): {title}\n{body}{on_click_text}',
+            'text': f'{app_name_text}{title}\n{body}{on_click_text}',
         }
         requests.post(url, json=payload, timeout=10)
 
