@@ -101,16 +101,18 @@ def notify(*args, **kwargs):
     telegram_bot_token = kwargs.pop('telegram_bot_token', None)
     telegram_chat_id = kwargs.pop('telegram_chat_id', None)
     if telegram_bot_token and telegram_chat_id:
-        TelegramNotifier(telegram_bot_token, telegram_chat_id).send(*args, **kwargs)
-    else:
         try:
-            {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform]().send(*args, **kwargs)
+            return TelegramNotifier(telegram_bot_token, telegram_chat_id).send(*args, **kwargs)
         except Exception:
-            logger.exception('failed to send notification')
+            logger.exception('failed to send notification via telegram')
+    try:
+        return {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform]().send(*args, **kwargs)
+    except Exception:
+        logger.exception('failed to send desktop notification')
 
 
 def clear_notification(*args, **kwargs):
     try:
-        {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform]().clear(*args, **kwargs)
+        return {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform]().clear(*args, **kwargs)
     except Exception:
-        logger.exception('failed to clear notification')
+        logger.exception('failed to clear desktop notification')
