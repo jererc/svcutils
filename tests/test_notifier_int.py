@@ -22,4 +22,10 @@ class NotifierTelegramTestCase(unittest.TestCase):
             self.settings = json.load(f)
 
     def test_1(self):
-        module.notify('title', body='body', telegram_bot_token=self.settings['BOT_TOKEN'], telegram_chat_id=self.settings['CHAT_ID'])
+        module.notify(
+            'title',
+            body='body',
+            on_click='https://en.wikipedia.org',
+            telegram_bot_token=self.settings['BOT_TOKEN'],
+            telegram_chat_id=self.settings['CHAT_ID'],
+        )
