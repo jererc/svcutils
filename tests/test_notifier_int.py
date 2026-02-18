@@ -25,6 +25,7 @@ class NotifierTelegramTestCase(unittest.TestCase):
         module.notify(
             'title',
             body='body',
+            app_name='app',
             on_click='https://en.wikipedia.org',
             telegram_bot_token=self.settings['BOT_TOKEN'],
             telegram_chat_id=self.settings['CHAT_ID'],

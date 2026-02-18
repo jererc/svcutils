@@ -88,12 +88,13 @@ class TelegramNotifier:
         self.telegram_bot_token = telegram_bot_token
         self.telegram_chat_id = telegram_chat_id
 
-    def send(self, title, body, on_click=None, **kwargs):
+    def send(self, title, body, app_name=None, on_click=None, **kwargs):
         url = f'https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage'
+        app_name_text = f'{app_name}: ' if app_name else ''
         on_click_text = f'\n{on_click}' if on_click else ''
         payload = {
             'chat_id': self.telegram_chat_id,
-            'text': f'{title}\n{body}{on_click_text}',
+            'text': f'{app_name_text}{title}\n{body}{on_click_text}',
         }
         requests.post(url, json=payload, timeout=10)
 
