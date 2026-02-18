@@ -2,6 +2,7 @@ from copy import deepcopy
 import json
 import logging
 import os
+import socket
 import subprocess
 import sys
 
@@ -94,7 +95,7 @@ class TelegramNotifier:
         on_click_text = f'\n{on_click}' if on_click else ''
         payload = {
             'chat_id': self.telegram_chat_id,
-            'text': f'{app_name_text}{title}\n{body}{on_click_text}',
+            'text': f'{app_name_text} ({socket.gethostname()}): {title}\n{body}{on_click_text}',
         }
         requests.post(url, json=payload, timeout=10)
 
