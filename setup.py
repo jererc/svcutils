@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='svcutils',
-    version='2026.01.20.072513',
+    version='2026.02.18.113318',
     author='jererc',
     author_email='jererc@gmail.com',
     url='https://github.com/jererc/svcutils',
@@ -10,6 +10,7 @@ setup(
     python_requires='>=3.10',
     install_requires=[
         'psutil',
+        'requests',
     ],
     extras_require={
         'dev': ['flake8', 'pytest'],

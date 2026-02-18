@@ -5,6 +5,8 @@ import os
 import subprocess
 import sys
 
+import requests
+
 from svcutils.service import get_display_env
 
 logger = logging.getLogger(__name__)
@@ -81,11 +83,30 @@ class LinuxNotifier:
             logger.warning(f'failed to clear notification for {app_name=} {replace_key=}: {e.output}')
 
 
+class TelegramNotifier:
+    def __init__(self, telegram_bot_token, telegram_chat_id):
+        self.telegram_bot_token = telegram_bot_token
+        self.telegram_chat_id = telegram_chat_id
+
+    def send(self, title, body, **kwargs):
+        url = f'https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage'
+        payload = {
+            'chat_id': self.telegram_chat_id,
+            'text': f'{title}\n{body}',
+        }
+        requests.post(url, json=payload, timeout=10)
+
+
 def notify(*args, **kwargs):
-    try:
-        {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform]().send(*args, **kwargs)
-    except Exception:
-        logger.exception('failed to send notification')
+    telegram_bot_token = kwargs.pop('telegram_bot_token', None)
+    telegram_chat_id = kwargs.pop('telegram_chat_id', None)
+    if telegram_bot_token and telegram_chat_id:
+        TelegramNotifier(telegram_bot_token, telegram_chat_id).send(*args, **kwargs)
+    else:
+        try:
+            {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform]().send(*args, **kwargs)
+        except Exception:
+            logger.exception('failed to send notification')
 
 
 def clear_notification(*args, **kwargs):
