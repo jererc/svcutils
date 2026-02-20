@@ -101,16 +101,16 @@ class LinuxNotifier(BaseNotifier):
 
 
 class TelegramNotifier(BaseNotifier):
-    def __init__(self, telegram_bot_token, telegram_chat_id, app_name=None):
-        self.telegram_bot_token = telegram_bot_token
-        self.telegram_chat_id = telegram_chat_id
+    def __init__(self, bot_token, chat_id, app_name=None):
+        self.bot_token = bot_token
+        self.chat_id = chat_id
         self.app_name = app_name
 
     def send(self, title, body, on_click=None, **kwargs):
-        url = f'https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage'
+        url = f'https://api.telegram.org/bot{self.bot_token}/sendMessage'
         on_click_text = f'\n{on_click}' if on_click else ''
         payload = {
-            'chat_id': self.telegram_chat_id,
+            'chat_id': self.chat_id,
             'text': f'<b>{self.app_name or ""}@{socket.gethostname()}: {title}</b>\n{body}{on_click_text}',
             'parse_mode': 'HTML',
         }
@@ -122,8 +122,5 @@ class TelegramNotifier(BaseNotifier):
 
 def get_notifier(app_name=None, telegram_bot_token=None, telegram_chat_id=None):
     if telegram_bot_token and telegram_chat_id:
-        return TelegramNotifier(
-            telegram_bot_token=telegram_bot_token,
-            telegram_chat_id=telegram_chat_id,
-            app_name=app_name)
+        return TelegramNotifier(bot_token=telegram_bot_token, chat_id=telegram_chat_id, app_name=app_name)
     return {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform](app_name=app_name)
