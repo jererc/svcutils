@@ -111,7 +111,7 @@ class TelegramNotifier(BaseNotifier):
         on_click_text = f'\n{on_click}' if on_click else ''
         payload = {
             'chat_id': self.telegram_chat_id,
-            'text': f'<b>{self.app_name or ""}@{socket.gethostname()}\n{title}</b>\n{body}{on_click_text}',
+            'text': f'<b>{self.app_name or ""}@{socket.gethostname()}: {title}</b>\n{body}{on_click_text}',
             'parse_mode': 'HTML',
         }
         try:
