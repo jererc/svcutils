@@ -11,7 +11,7 @@ TELEGRAM_SETTINGS_FILE = os.path.expanduser('~/telegram.json')
 
 class DesktopTestCase(unittest.TestCase):
     def setUp(self):
-        self.notifier = module.get_notifier(app_name='awesome-app')
+        self.notifier = module.get_desktop_notifier(app_name='awesome-app')
 
     def test_1(self):
         for i in range(3):
@@ -24,11 +24,23 @@ class TelegramTestCase(unittest.TestCase):
     def setUp(self):
         with open(TELEGRAM_SETTINGS_FILE) as f:
             self.settings = json.load(f)
-        self.notifier = module.get_notifier(
+
+    def test_failure(self):
+        module.notify(
+            'awesome title',
+            'awesome body',
+            on_click='https://en.wikipedia.org',
+            app_name='awesome-app',
+            telegram_bot_token='INVALID_BOT_TOKEN',
+            telegram_chat_id=self.settings['CHAT_ID'],
+        )
+
+    def test_success(self):
+        module.notify(
+            'awesome title',
+            'awesome body',
+            on_click='https://en.wikipedia.org',
             app_name='awesome-app',
             telegram_bot_token=self.settings['BOT_TOKEN'],
             telegram_chat_id=self.settings['CHAT_ID'],
         )
-
-    def test_1(self):
-        self.notifier.send('awesome title', 'awesome body', on_click='https://en.wikipedia.org')

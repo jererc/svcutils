@@ -29,10 +29,7 @@ class WindowsNotifier(BaseNotifier):
         from win11toast import notify as _notify
         # if replace_key:
         #     self.clear(replace_key)
-        try:
-            _notify(title=title, body=body, app_id=self.app_name, on_click=on_click, tag=replace_key, group=self.app_name)
-        except Exception:
-            logger.exception(f'failed to send notification for {self.app_name=}')
+        _notify(title=title, body=body, app_id=self.app_name, on_click=on_click, tag=replace_key, group=self.app_name)
 
     def clear(self, replace_key):
         from win11toast import clear_toast
@@ -74,10 +71,7 @@ class LinuxNotifier(BaseNotifier):
         try:
             stdout = subprocess.check_output(cmd + [title, body], env=env)
         except subprocess.CalledProcessError:
-            try:
-                stdout = subprocess.check_output(base_cmd + [title, body], env=env)
-            except subprocess.CalledProcessError:
-                logger.exception(f'failed to send notification for {self.app_name=}')
+            stdout = subprocess.check_output(base_cmd + [title, body], env=env)
         else:
             if self.app_name and replace_key:
                 meta.setdefault(self.app_name, {})
@@ -114,13 +108,24 @@ class TelegramNotifier(BaseNotifier):
             'text': f'<b>{self.app_name or ""}@{socket.gethostname()}: {title}</b>\n{body}{on_click_text}',
             'parse_mode': 'HTML',
         }
-        try:
-            requests.post(url, json=payload, timeout=10)
-        except Exception:
-            logger.exception(f'failed to send notification for {self.app_name=}')
+        res = requests.post(url, json=payload, timeout=10)
+        res.raise_for_status()
 
 
-def get_notifier(app_name=None, telegram_bot_token=None, telegram_chat_id=None):
-    if telegram_bot_token and telegram_chat_id:
-        return TelegramNotifier(bot_token=telegram_bot_token, chat_id=telegram_chat_id, app_name=app_name)
+def get_desktop_notifier(app_name):
     return {'linux': LinuxNotifier, 'win32': WindowsNotifier}[sys.platform](app_name=app_name)
+
+
+def notify(*args, **kwargs):
+    app_name = kwargs.pop('app_name', None)
+    telegram_bot_token = kwargs.pop('telegram_bot_token', None)
+    telegram_chat_id = kwargs.pop('telegram_chat_id', None)
+    if telegram_bot_token and telegram_chat_id:
+        try:
+            return TelegramNotifier(bot_token=telegram_bot_token, chat_id=telegram_chat_id, app_name=app_name).send(*args, **kwargs)
+        except Exception:
+            logger.exception(f'failed to send telegram notification for {app_name=}')
+    try:
+        return get_desktop_notifier(app_name=app_name).send(*args, **kwargs)
+    except Exception:
+        logger.exception(f'failed to send desktop notification for {app_name=}')
