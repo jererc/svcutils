@@ -13,6 +13,7 @@ APP_DATA_DIR = {'linux': os.path.join(os.getenv('HOME', HOME_DIR), '.local', 'sh
 APP_DIR = {'linux': os.path.join(APP_DATA_DIR, 'applications'),
            'win32': os.path.join(APP_DATA_DIR, r'Microsoft\Windows\Start Menu\Programs')}[sys.platform]
 VENV_DIRNAME = 'venv'
+VENV_INIT_FILENAME = '.initialized'
 VENV_BIN_DIRNAME = {'linux': 'bin', 'win32': 'Scripts'}[sys.platform]
 VENV_PIP_PATH = {'linux': 'pip', 'win32': 'pip.exe'}[sys.platform]
 VENV_PY_PATH = {'linux': 'python', 'win32': 'python.exe'}[sys.platform]
@@ -65,17 +66,21 @@ class Bootstrapper:
             subprocess.check_call(venv_cmd)
 
     def _setup_venv(self):
-        requires_init = not os.path.exists(self.pip_path)
+        py_version = f'{sys.version_info.major}.{sys.version_info.minor}'
+        init_file = Path(self.venv_dir, VENV_INIT_FILENAME)
+        requires_init = not init_file.exists() or init_file.read_text() != py_version
         if requires_init:
-            subprocess.check_call([sys.executable, '-m', 'venv', self.venv_dir])   # requires python3-venv
+            subprocess.check_call([sys.executable, '-m', 'venv', '--clear', self.venv_dir])   # requires python3-venv
             print(f'created virtualenv: {self.venv_dir}')
         if self.install_requires:
             base_cmd = [self.pip_path, 'install']
             if self.force_reinstall:
                 base_cmd.append('--force-reinstall')
             subprocess.check_call(base_cmd + self.install_requires)
-        if requires_init and self.init_cmds:
-            self._run_venv_cmds(self.init_cmds)
+        if requires_init:
+            if self.init_cmds:
+                self._run_venv_cmds(self.init_cmds)
+            init_file.write_text(py_version)
         if self.extra_cmds:
             self._run_venv_cmds(self.extra_cmds)
 
