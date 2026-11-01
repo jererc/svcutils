@@ -1,6 +1,7 @@
 import ctypes
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import urllib.request
@@ -39,6 +40,23 @@ def get_work_dir(name):
     return path
 
 
+def ensure_venv_support():
+    if sys.platform != 'linux':
+        return
+    try:
+        import ensurepip  # noqa: F401
+        return
+    except ImportError:
+        pass
+    package = f'python{sys.version_info.major}.{sys.version_info.minor}-venv'
+    if not shutil.which('apt-get'):
+        raise SystemExit(f'Error: python venv support is missing, install the equivalent of {package}')
+    prefix = [] if os.geteuid() == 0 else ['sudo']
+    print(f'installing {package}')
+    subprocess.check_call(prefix + ['apt-get', 'update'], stdin=subprocess.DEVNULL)
+    subprocess.check_call(prefix + ['apt-get', 'install', '-y', package], stdin=subprocess.DEVNULL)
+
+
 class Bootstrapper:
     def __init__(self, name, install_requires=None, force_reinstall=False, init_cmds=None, extra_cmds=None,
                  tasks=None, shortcuts=None, assets=None):
@@ -70,7 +88,8 @@ class Bootstrapper:
         init_file = Path(self.venv_dir, VENV_INIT_FILENAME)
         requires_init = not init_file.exists() or init_file.read_text() != py_version
         if requires_init:
-            subprocess.check_call([sys.executable, '-m', 'venv', '--clear', self.venv_dir])   # requires python3-venv
+            ensure_venv_support()
+            subprocess.check_call([sys.executable, '-m', 'venv', '--clear', self.venv_dir])
             print(f'created virtualenv: {self.venv_dir}')
         if self.install_requires:
             base_cmd = [self.pip_path, 'install']

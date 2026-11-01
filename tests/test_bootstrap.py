@@ -2,7 +2,7 @@ import os
 import shutil
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from tests import WORK_DIR
 from svcutils import bootstrap as module
@@ -41,6 +41,63 @@ class CrontabTestCase(unittest.TestCase):
 
     def test_4(self):
         self.assertEqual(self.bs._generate_crontab_schedule(schedule_minutes=24 * 60 + 1), '0 0 * * *')
+
+
+@unittest.skipUnless(sys.platform == 'linux', 'linux only')
+class EnsureVenvSupportTestCase(unittest.TestCase):
+    def setUp(self):
+        self.package = f'python{sys.version_info.major}.{sys.version_info.minor}-venv'
+
+    def _run(self, euid=1000, apt_get='/usr/bin/apt-get'):
+        with patch.dict(sys.modules, {'ensurepip': None}), \
+             patch.object(module.os, 'geteuid', return_value=euid), \
+             patch.object(module.shutil, 'which', return_value=apt_get), \
+             patch.object(module.subprocess, 'check_call') as mock_check_call:
+            module.ensure_venv_support()
+        return [c.args[0] for c in mock_check_call.call_args_list]
+
+    def test_already_available(self):
+        with patch.dict(sys.modules, {'ensurepip': object()}), \
+             patch.object(module.subprocess, 'check_call') as mock_check_call:
+            module.ensure_venv_support()
+        mock_check_call.assert_not_called()
+
+    def test_user_install(self):
+        self.assertEqual(self._run(), [['sudo', 'apt-get', 'update'],
+                                       ['sudo', 'apt-get', 'install', '-y', self.package]])
+
+    def test_root_install(self):
+        self.assertEqual(self._run(euid=0), [['apt-get', 'update'],
+                                             ['apt-get', 'install', '-y', self.package]])
+
+    def test_no_apt_get(self):
+        with self.assertRaises(SystemExit) as ctx:
+            self._run(apt_get=None)
+        self.assertIn(self.package, str(ctx.exception))
+
+
+class SetupVenvTestCase(unittest.TestCase):
+    def setUp(self):
+        remove_path(WORK_DIR)
+        os.makedirs(WORK_DIR)
+        self.bs = get_bs(name=NAME)
+        os.makedirs(self.bs.venv_dir)
+        self.parent = Mock()
+        self.patchers = [patch.object(module, 'ensure_venv_support', self.parent.ensure_venv_support),
+                         patch.object(module.subprocess, 'check_call', self.parent.check_call)]
+        for patcher in self.patchers:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_checked_before_creating_venv(self):
+        self.bs._setup_venv()
+        self.assertEqual([c[0] for c in self.parent.mock_calls], ['ensure_venv_support', 'check_call'])
+
+    def test_not_checked_when_initialized(self):
+        self.bs._setup_venv()
+        self.parent.reset_mock()
+        self.bs._setup_venv()
+        self.parent.ensure_venv_support.assert_not_called()
 
 
 class BootstrapperTestCase(unittest.TestCase):
